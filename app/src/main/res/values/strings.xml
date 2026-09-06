@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SMS Forwarder</string>
+    <string name="channel_name_forwarder">SMS Forwarder Service</string>
+    <string name="channel_desc_forwarder">Shows persistent notification when SMS forwarding service is active</string>
+    <string name="channel_name_alerts">SMS Forwarder Alerts</string>
+    <string name="channel_desc_alerts">Shows notifications for SMS draft sending or forwarding errors</string>
+</resources>
