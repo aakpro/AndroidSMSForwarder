@@ -27,12 +27,23 @@ class SimUtil(private val context: Context) {
         return try {
             val list: List<SubscriptionInfo>? = subscriptionManager.activeSubscriptionInfoList
             list?.map { subInfo ->
+                @Suppress("DEPRECATION")
+                val number = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    try {
+                        subscriptionManager.getPhoneNumber(subInfo.subscriptionId)
+                    } catch (e: Exception) {
+                        subInfo.number
+                    }
+                } else {
+                    subInfo.number
+                }
+
                 SimCardInfo(
                     slotIndex = subInfo.simSlotIndex,
                     subscriptionId = subInfo.subscriptionId,
                     displayName = subInfo.displayName?.toString() ?: "SIM ${subInfo.simSlotIndex + 1}",
                     carrierName = subInfo.carrierName?.toString() ?: "Unknown Carrier",
-                    phoneNumber = subInfo.number
+                    phoneNumber = number
                 )
             } ?: emptyList()
         } catch (e: Exception) {

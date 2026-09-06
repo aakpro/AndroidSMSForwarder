@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -148,7 +149,7 @@ fun HomeScreen(
                 title = "Telegram Bot",
                 subtitle = if (isTelegramEnabled) "Enabled (24/7 Bot API)" else "Disabled (Configure in Settings)",
                 isActive = isTelegramEnabled,
-                icon = Icons.Default.Send,
+                icon = Icons.AutoMirrored.Filled.Send,
                 trailingContent = {
                     Switch(
                         checked = isTelegramEnabled,
@@ -163,7 +164,7 @@ fun HomeScreen(
                 title = "WhatsApp",
                 subtitle = if (isWhatsAppEnabled) "Enabled" else "Disabled (Configure in Settings)",
                 isActive = isWhatsAppEnabled,
-                icon = Icons.Default.Chat,
+                icon = Icons.AutoMirrored.Filled.Chat,
                 trailingContent = {
                     Switch(
                         checked = isWhatsAppEnabled,
