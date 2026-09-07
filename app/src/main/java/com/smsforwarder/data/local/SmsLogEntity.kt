@@ -15,6 +15,11 @@ data class SmsLogEntity(
     val timestamp: Long,
     val telegramStatus: String,     // PENDING, SUCCESS, FAILED, SKIPPED, DISABLED
     val whatsappStatus: String,     // PENDING, SUCCESS, FAILED, SKIPPED, DISABLED, DRAFT_CREATED
+    val discordStatus: String = "DISABLED",
+    val webhookStatus: String = "DISABLED",
     val isSensitive: Boolean = false, // True if OTP / banking keywords matched
+    val durationMs: Long = 0L,
+    val batteryLevel: Int = -1,
+    val networkType: String = "UNKNOWN",
     val errorMessage: String? = null
 )

@@ -1,6 +1,5 @@
 package com.smsforwarder.ui.screens
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,17 +12,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.smsforwarder.R
 import com.smsforwarder.data.preferences.AppPreferences
 import com.smsforwarder.data.preferences.SecurePreferences
 import com.smsforwarder.data.preferences.WhatsAppMode
+import com.smsforwarder.sender.DiscordSender
+import com.smsforwarder.sender.GenericWebhookSender
 import com.smsforwarder.sender.TelegramSender
 import com.smsforwarder.sender.WhatsAppSender
+import com.smsforwarder.ui.components.BatteryOptimizationCard
 import com.smsforwarder.ui.components.CallMeBotWarningDialog
-import com.smsforwarder.util.PermissionHelper
+import com.smsforwarder.worker.HeartbeatWorker
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,26 +40,42 @@ fun SettingsScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    // Language
+    val currentLang by appPreferences.appLanguage.collectAsState(initial = "system")
+
     // Telegram State
+    val isTelegramEnabled by appPreferences.isTelegramEnabled.collectAsState(initial = false)
     var botToken by remember { mutableStateOf(securePreferences.telegramBotToken) }
     var chatId by remember { mutableStateOf(securePreferences.telegramChatId) }
     var isTokenVisible by remember { mutableStateOf(false) }
 
     // WhatsApp State
+    val isWhatsAppEnabled by appPreferences.isWhatsAppEnabled.collectAsState(initial = false)
     val currentWaMode by appPreferences.whatsAppMode.collectAsState(initial = WhatsAppMode.CALLMEBOT)
     var cmbApiKey by remember { mutableStateOf(securePreferences.callMeBotApiKey) }
     var cmbPhone by remember { mutableStateOf(securePreferences.callMeBotPhoneNumber) }
     var isCmbKeyVisible by remember { mutableStateOf(false) }
-
     var webhookUrl by remember { mutableStateOf(securePreferences.customWebhookUrl) }
     var webhookAuth by remember { mutableStateOf(securePreferences.customWebhookAuthHeader) }
-
     var draftPhone by remember { mutableStateOf(securePreferences.whatsappDraftPhoneNumber) }
-
     val excludeSensitive by appPreferences.excludeSensitiveFromCallMeBot.collectAsState(initial = true)
     val redactOtp by appPreferences.redactOtpInCallMeBot.collectAsState(initial = false)
     val callMeBotWarningAccepted by appPreferences.callMeBotWarningAccepted.collectAsState(initial = false)
     var showCallMeBotWarning by remember { mutableStateOf(false) }
+
+    // Discord State
+    val isDiscordEnabled by appPreferences.isDiscordEnabled.collectAsState(initial = false)
+    var discordWebhookUrl by remember { mutableStateOf(securePreferences.discordWebhookUrl) }
+
+    // Generic Webhook State
+    val isGenericWebhookEnabled by appPreferences.isGenericWebhookEnabled.collectAsState(initial = false)
+    var genericWebhookUrl by remember { mutableStateOf(securePreferences.genericWebhookUrl) }
+    var genericWebhookAuth by remember { mutableStateOf(securePreferences.genericWebhookAuthHeader) }
+
+    // Reliability & Health State
+    val isHeartbeatEnabled by appPreferences.isHeartbeatEnabled.collectAsState(initial = false)
+    val heartbeatInterval by appPreferences.heartbeatIntervalHours.collectAsState(initial = 12)
+    val isLowBatteryAlertEnabled by appPreferences.isLowBatteryAlertEnabled.collectAsState(initial = true)
 
     // Template State
     val template by appPreferences.messageTemplate.collectAsState(initial = AppPreferences.DEFAULT_TEMPLATE)
@@ -67,6 +87,8 @@ fun SettingsScreen(
 
     val telegramSender = remember { TelegramSender(securePreferences) }
     val whatsAppSender = remember { WhatsAppSender(context, securePreferences) }
+    val discordSender = remember { DiscordSender(securePreferences) }
+    val genericWebhookSender = remember { GenericWebhookSender(securePreferences) }
 
     if (showCallMeBotWarning) {
         CallMeBotWarningDialog(
@@ -83,11 +105,11 @@ fun SettingsScreen(
     testResultDialogText?.let { message ->
         AlertDialog(
             onDismissRequest = { testResultDialogText = null },
-            title = { Text(text = "Connection Test") },
+            title = { Text(text = stringResource(R.string.test_connection)) },
             text = { Text(text = message) },
             confirmButton = {
                 TextButton(onClick = { testResultDialogText = null }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.ok))
                 }
             }
         )
@@ -96,7 +118,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Settings") },
+                title = { Text(text = stringResource(R.string.settings_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -111,24 +133,64 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // ==========================================
+            // Section 0: General / Language
+            // ==========================================
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.app_language), style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = currentLang == "system",
+                            onClick = { coroutineScope.launch { appPreferences.setAppLanguage("system") } },
+                            label = { Text(stringResource(R.string.lang_system)) }
+                        )
+                        FilterChip(
+                            selected = currentLang == "en",
+                            onClick = { coroutineScope.launch { appPreferences.setAppLanguage("en") } },
+                            label = { Text("English") }
+                        )
+                        FilterChip(
+                            selected = currentLang == "fa",
+                            onClick = { coroutineScope.launch { appPreferences.setAppLanguage("fa") } },
+                            label = { Text("فارسی") }
+                        )
+                    }
+                }
+            }
+
             // ==========================================
             // Section 1: Telegram Bot Configuration
             // ==========================================
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Telegram Bot (Encrypted Keystore)", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(R.string.channel_telegram), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Switch(
+                            checked = isTelegramEnabled,
+                            onCheckedChange = { checked ->
+                                coroutineScope.launch { appPreferences.setTelegramEnabled(checked) }
+                            }
+                        )
                     }
-
-                    Text(
-                        text = "Forward SMS directly to your Telegram chat or channel via Bot API. 100% background automated.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
 
                     OutlinedTextField(
                         value = botToken,
@@ -136,7 +198,8 @@ fun SettingsScreen(
                             botToken = it
                             securePreferences.telegramBotToken = it
                         },
-                        label = { Text("Bot Token (from @BotFather)") },
+                        label = { Text(stringResource(R.string.telegram_token)) },
+                        placeholder = { Text(stringResource(R.string.telegram_token_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         visualTransformation = if (isTokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -156,7 +219,8 @@ fun SettingsScreen(
                             chatId = it
                             securePreferences.telegramChatId = it
                         },
-                        label = { Text("Chat ID (e.g. 12345678 or -100xxx)") },
+                        label = { Text(stringResource(R.string.telegram_chat_id)) },
+                        placeholder = { Text(stringResource(R.string.telegram_chat_id_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -168,7 +232,7 @@ fun SettingsScreen(
                                 val result = telegramSender.testConnection(botToken, chatId)
                                 isTestingConnection = false
                                 testResultDialogText = if (result.isSuccess) {
-                                    "✅ Telegram connection succeeded! Check your Telegram chat for the test message."
+                                    "✅ Telegram connection succeeded!"
                                 } else {
                                     "❌ Telegram test failed:\n${result.exceptionOrNull()?.message}"
                                 }
@@ -180,29 +244,163 @@ fun SettingsScreen(
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                             Spacer(modifier = Modifier.width(8.dp))
                         }
-                        Text("Test Telegram Connection")
+                        Text(stringResource(R.string.test_connection))
                     }
                 }
             }
 
             // ==========================================
-            // Section 2: WhatsApp Configuration
+            // Section 2: Discord Webhook
             // ==========================================
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "WhatsApp Configuration", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(R.string.channel_discord), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Switch(
+                            checked = isDiscordEnabled,
+                            onCheckedChange = { checked ->
+                                coroutineScope.launch { appPreferences.setDiscordEnabled(checked) }
+                            }
+                        )
                     }
 
-                    Text(text = "Delivery Mode:", style = MaterialTheme.typography.labelMedium)
+                    OutlinedTextField(
+                        value = discordWebhookUrl,
+                        onValueChange = {
+                            discordWebhookUrl = it
+                            securePreferences.discordWebhookUrl = it
+                        },
+                        label = { Text(stringResource(R.string.discord_webhook_url)) },
+                        placeholder = { Text(stringResource(R.string.discord_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Button(
+                        onClick = {
+                            isTestingConnection = true
+                            coroutineScope.launch {
+                                val result = discordSender.testConnection(discordWebhookUrl)
+                                isTestingConnection = false
+                                testResultDialogText = if (result.isSuccess) {
+                                    "✅ Discord connection test succeeded!"
+                                } else {
+                                    "❌ Discord test failed:\n${result.exceptionOrNull()?.message}"
+                                }
+                            }
+                        },
+                        enabled = discordWebhookUrl.isNotBlank() && !isTestingConnection
+                    ) {
+                        Text(stringResource(R.string.test_connection))
+                    }
+                }
+            }
+
+            // ==========================================
+            // Section 3: Generic HTTP Webhook
+            // ==========================================
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Http, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(R.string.channel_generic_webhook), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Switch(
+                            checked = isGenericWebhookEnabled,
+                            onCheckedChange = { checked ->
+                                coroutineScope.launch { appPreferences.setGenericWebhookEnabled(checked) }
+                            }
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = genericWebhookUrl,
+                        onValueChange = {
+                            genericWebhookUrl = it
+                            securePreferences.genericWebhookUrl = it
+                        },
+                        label = { Text(stringResource(R.string.webhook_url)) },
+                        placeholder = { Text("https://your-server.com/webhook") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = genericWebhookAuth,
+                        onValueChange = {
+                            genericWebhookAuth = it
+                            securePreferences.genericWebhookAuthHeader = it
+                        },
+                        label = { Text(stringResource(R.string.webhook_auth)) },
+                        placeholder = { Text(stringResource(R.string.webhook_auth_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Button(
+                        onClick = {
+                            isTestingConnection = true
+                            coroutineScope.launch {
+                                val result = genericWebhookSender.testConnection(genericWebhookUrl, genericWebhookAuth)
+                                isTestingConnection = false
+                                testResultDialogText = if (result.isSuccess) {
+                                    "✅ Webhook received test payload successfully!"
+                                } else {
+                                    "❌ Webhook failed:\n${result.exceptionOrNull()?.message}"
+                                }
+                            }
+                        },
+                        enabled = genericWebhookUrl.isNotBlank() && !isTestingConnection
+                    ) {
+                        Text(stringResource(R.string.test_connection))
+                    }
+                }
+            }
+
+            // ==========================================
+            // Section 4: WhatsApp Configuration
+            // ==========================================
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(R.string.channel_whatsapp), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Switch(
+                            checked = isWhatsAppEnabled,
+                            onCheckedChange = { checked ->
+                                coroutineScope.launch { appPreferences.setWhatsAppEnabled(checked) }
+                            }
+                        )
+                    }
+
+                    Text(text = stringResource(R.string.whatsapp_mode), style = MaterialTheme.typography.labelMedium)
 
                     WhatsAppMode.entries.forEach { mode ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -217,24 +415,19 @@ fun SettingsScreen(
                                 }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(text = mode.title, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = when (mode) {
-                                        WhatsAppMode.CALLMEBOT -> "Free API via WhatsApp relay. Throttled & requires API key."
-                                        WhatsAppMode.WEBHOOK -> "POST payload to your custom server / Evolution API / n8n."
-                                        WhatsAppMode.INTENT_DRAFT -> "Pre-fills message and opens WhatsApp. Requires manual tap to send."
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                            }
+                            Text(
+                                text = when (mode) {
+                                    WhatsAppMode.CALLMEBOT -> stringResource(R.string.wa_mode_callmebot)
+                                    WhatsAppMode.WEBHOOK -> stringResource(R.string.wa_mode_webhook)
+                                    WhatsAppMode.INTENT_DRAFT -> stringResource(R.string.wa_mode_draft)
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                     }
 
                     HorizontalDivider()
 
-                    // Mode-Specific Fields
                     when (currentWaMode) {
                         WhatsAppMode.CALLMEBOT -> {
                             OutlinedTextField(
@@ -243,7 +436,8 @@ fun SettingsScreen(
                                     cmbPhone = it
                                     securePreferences.callMeBotPhoneNumber = it
                                 },
-                                label = { Text("WhatsApp Phone (with country code, e.g. +123456789)") },
+                                label = { Text(stringResource(R.string.callmebot_phone)) },
+                                placeholder = { Text(stringResource(R.string.callmebot_phone_hint)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                 singleLine = true
@@ -255,7 +449,7 @@ fun SettingsScreen(
                                     cmbApiKey = it
                                     securePreferences.callMeBotApiKey = it
                                 },
-                                label = { Text("CallMeBot API Key") },
+                                label = { Text(stringResource(R.string.callmebot_api_key)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 visualTransformation = if (isCmbKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -268,71 +462,7 @@ fun SettingsScreen(
                                     }
                                 }
                             )
-
-                            // Privacy Guard Toggle
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(text = "Privacy Guard (CallMeBot)", style = MaterialTheme.typography.titleSmall)
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "Protects against sending OTPs/bank alerts through third-party relays.",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(text = "Exclude OTPs & Bank Codes", style = MaterialTheme.typography.bodyMedium)
-                                        Switch(
-                                            checked = excludeSensitive,
-                                            onCheckedChange = { coroutineScope.launch { appPreferences.setExcludeSensitiveFromCallMeBot(it) } }
-                                        )
-                                    }
-
-                                    if (!excludeSensitive) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(text = "Redact Code Digits", style = MaterialTheme.typography.bodyMedium)
-                                            Switch(
-                                                checked = redactOtp,
-                                                onCheckedChange = { coroutineScope.launch { appPreferences.setRedactOtpInCallMeBot(it) } }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Button(
-                                onClick = {
-                                    isTestingConnection = true
-                                    coroutineScope.launch {
-                                        val result = whatsAppSender.testCallMeBot(cmbPhone, cmbApiKey)
-                                        isTestingConnection = false
-                                        testResultDialogText = if (result.isSuccess) {
-                                            "✅ CallMeBot sent test message to your WhatsApp!"
-                                        } else {
-                                            "❌ CallMeBot failed:\n${result.exceptionOrNull()?.message}"
-                                        }
-                                    }
-                                },
-                                enabled = cmbPhone.isNotBlank() && cmbApiKey.isNotBlank() && !isTestingConnection
-                            ) {
-                                Text("Test CallMeBot")
-                            }
                         }
-
                         WhatsAppMode.WEBHOOK -> {
                             OutlinedTextField(
                                 value = webhookUrl,
@@ -340,41 +470,11 @@ fun SettingsScreen(
                                     webhookUrl = it
                                     securePreferences.customWebhookUrl = it
                                 },
-                                label = { Text("Webhook HTTPS URL") },
+                                label = { Text(stringResource(R.string.webhook_url)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
-
-                            OutlinedTextField(
-                                value = webhookAuth,
-                                onValueChange = {
-                                    webhookAuth = it
-                                    securePreferences.customWebhookAuthHeader = it
-                                },
-                                label = { Text("Optional Authorization Header (Bearer xxx)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            Button(
-                                onClick = {
-                                    isTestingConnection = true
-                                    coroutineScope.launch {
-                                        val result = whatsAppSender.testWebhook(webhookUrl, webhookAuth)
-                                        isTestingConnection = false
-                                        testResultDialogText = if (result.isSuccess) {
-                                            "✅ Webhook received test payload successfully!"
-                                        } else {
-                                            "❌ Webhook failed:\n${result.exceptionOrNull()?.message}"
-                                        }
-                                    }
-                                },
-                                enabled = webhookUrl.isNotBlank() && !isTestingConnection
-                            ) {
-                                Text("Test Webhook")
-                            }
                         }
-
                         WhatsAppMode.INTENT_DRAFT -> {
                             OutlinedTextField(
                                 value = draftPhone,
@@ -382,7 +482,7 @@ fun SettingsScreen(
                                     draftPhone = it
                                     securePreferences.whatsappDraftPhoneNumber = it
                                 },
-                                label = { Text("Target Phone (Optional: leaves blank to choose in WhatsApp)") },
+                                label = { Text("WhatsApp Draft Phone (Optional)") },
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                 singleLine = true
@@ -393,13 +493,98 @@ fun SettingsScreen(
             }
 
             // ==========================================
-            // Section 3: Message Template
+            // Section 5: 24/7 Relay Reliability & Health
             // ==========================================
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(text = "Message Template", style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.section_reliability), style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    // Heartbeat Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.heartbeat_title), style = MaterialTheme.typography.bodyMedium)
+                            Text(text = stringResource(R.string.heartbeat_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Switch(
+                            checked = isHeartbeatEnabled,
+                            onCheckedChange = { enabled ->
+                                coroutineScope.launch {
+                                    appPreferences.setHeartbeatEnabled(enabled)
+                                    if (enabled) {
+                                        HeartbeatWorker.schedule(context, heartbeatInterval)
+                                    } else {
+                                        HeartbeatWorker.cancel(context)
+                                    }
+                                }
+                            }
+                        )
+                    }
+
+                    if (isHeartbeatEnabled) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Interval:", style = MaterialTheme.typography.labelMedium)
+                            listOf(1, 6, 12, 24).forEach { hours ->
+                                FilterChip(
+                                    selected = heartbeatInterval == hours,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            appPreferences.setHeartbeatIntervalHours(hours)
+                                            HeartbeatWorker.schedule(context, hours)
+                                        }
+                                    },
+                                    label = { Text("${hours}h") }
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    // Low Battery Alert Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.battery_alert_title), style = MaterialTheme.typography.bodyMedium)
+                            Text(text = stringResource(R.string.battery_alert_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Switch(
+                            checked = isLowBatteryAlertEnabled,
+                            onCheckedChange = { enabled ->
+                                coroutineScope.launch { appPreferences.setLowBatteryAlertEnabled(enabled) }
+                            }
+                        )
+                    }
+
+                    HorizontalDivider()
+
+                    // Battery Optimization Helper Card
+                    BatteryOptimizationCard()
+                }
+            }
+
+            // ==========================================
+            // Section 6: Message Template
+            // ==========================================
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(text = stringResource(R.string.section_template), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        text = "Placeholders: {sim}, {carrier}, {sender}, {message}, {time}, {date}",
+                        text = stringResource(R.string.template_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -412,7 +597,7 @@ fun SettingsScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(140.dp),
+                            .height(130.dp),
                         maxLines = 8
                     )
 
@@ -423,46 +608,6 @@ fun SettingsScreen(
                         }
                     ) {
                         Text("Reset to Default")
-                    }
-                }
-            }
-
-            // ==========================================
-            // Section 4: Battery Optimization Exemption
-            // ==========================================
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.BatteryChargingFull, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Battery Optimization", style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    Text(
-                        text = "To ensure background SMS forwarding is not terminated by Android or OEM battery savers (Xiaomi, Samsung, Huawei), disable battery optimization.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-
-                    val isIgnoring = PermissionHelper.isIgnoringBatteryOptimizations(context)
-                    Text(
-                        text = if (isIgnoring) "Status: Exemption Active (Recommended)" else "Status: Optimization Enabled (May be killed)",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (isIgnoring) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    )
-
-                    if (!isIgnoring) {
-                        OutlinedButton(
-                            onClick = {
-                                try {
-                                    context.startActivity(PermissionHelper.createIgnoreBatteryOptimizationsIntent(context))
-                                } catch (e: Exception) {
-                                    context.startActivity(PermissionHelper.createAppSettingsIntent(context))
-                                }
-                            }
-                        ) {
-                            Text("Request Exemption")
-                        }
                     }
                 }
             }

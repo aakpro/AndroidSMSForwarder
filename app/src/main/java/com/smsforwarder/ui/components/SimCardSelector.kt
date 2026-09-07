@@ -96,14 +96,14 @@ fun SimCardSelector(
 
             SimFilterOption.entries.forEach { option ->
                 val label = when (option) {
-                    SimFilterOption.ALL -> "Both SIMs (Forward All)"
+                    SimFilterOption.ALL -> androidx.compose.ui.res.stringResource(com.smsforwarder.R.string.sim_filter_all)
                     SimFilterOption.SIM_1 -> {
                         val carrier1 = activeSims.find { it.slotIndex == 0 }?.carrierName ?: "SIM 1"
-                        "SIM 1 Only ($carrier1)"
+                        androidx.compose.ui.res.stringResource(com.smsforwarder.R.string.sim_filter_sim1) + " ($carrier1)"
                     }
                     SimFilterOption.SIM_2 -> {
                         val carrier2 = activeSims.find { it.slotIndex == 1 }?.carrierName ?: "SIM 2"
-                        "SIM 2 Only ($carrier2)"
+                        androidx.compose.ui.res.stringResource(com.smsforwarder.R.string.sim_filter_sim2) + " ($carrier2)"
                     }
                 }
 

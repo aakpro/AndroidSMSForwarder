@@ -15,6 +15,19 @@ interface SmsLogDao {
     @Query("UPDATE sms_logs SET telegramStatus = :telegramStatus, whatsappStatus = :whatsappStatus, errorMessage = :error WHERE id = :id")
     suspend fun updateStatus(id: Long, telegramStatus: String, whatsappStatus: String, error: String?)
 
+    @Query("UPDATE sms_logs SET telegramStatus = :telegramStatus, whatsappStatus = :whatsappStatus, discordStatus = :discordStatus, webhookStatus = :webhookStatus, durationMs = :durationMs, batteryLevel = :batteryLevel, networkType = :networkType, errorMessage = :error WHERE id = :id")
+    suspend fun updateAllStatuses(
+        id: Long,
+        telegramStatus: String,
+        whatsappStatus: String,
+        discordStatus: String,
+        webhookStatus: String,
+        durationMs: Long,
+        batteryLevel: Int,
+        networkType: String,
+        error: String?
+    )
+
     @Query("UPDATE sms_logs SET telegramStatus = :status WHERE id = :id")
     suspend fun updateTelegramStatus(id: Long, status: String)
 
@@ -24,11 +37,17 @@ interface SmsLogDao {
     @Query("SELECT * FROM sms_logs ORDER BY timestamp DESC LIMIT :limit")
     fun getRecentLogs(limit: Int = 100): Flow<List<SmsLogEntity>>
 
+    @Query("SELECT * FROM sms_logs WHERE sender LIKE '%' || :query || '%' OR messageBody LIKE '%' || :query || '%' OR carrierName LIKE '%' || :query || '%' ORDER BY timestamp DESC LIMIT :limit")
+    fun searchLogs(query: String, limit: Int = 100): Flow<List<SmsLogEntity>>
+
     @Query("SELECT * FROM sms_logs WHERE simSlotIndex = :slotIndex ORDER BY timestamp DESC LIMIT :limit")
     fun getLogsBySimSlot(slotIndex: Int, limit: Int = 100): Flow<List<SmsLogEntity>>
 
-    @Query("SELECT * FROM sms_logs WHERE telegramStatus = 'FAILED' OR whatsappStatus = 'FAILED' ORDER BY timestamp DESC")
+    @Query("SELECT * FROM sms_logs WHERE telegramStatus = 'FAILED' OR whatsappStatus = 'FAILED' OR discordStatus = 'FAILED' OR webhookStatus = 'FAILED' ORDER BY timestamp DESC")
     fun getFailedLogs(): Flow<List<SmsLogEntity>>
+
+    @Query("SELECT * FROM sms_logs ORDER BY timestamp DESC")
+    suspend fun getAllLogsSync(): List<SmsLogEntity>
 
     @Query("SELECT * FROM sms_logs WHERE id = :id")
     suspend fun getLogById(id: Long): SmsLogEntity?
@@ -36,7 +55,7 @@ interface SmsLogDao {
     @Query("SELECT COUNT(*) FROM sms_logs")
     fun getTotalCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM sms_logs WHERE telegramStatus = 'SUCCESS' OR whatsappStatus = 'SUCCESS'")
+    @Query("SELECT COUNT(*) FROM sms_logs WHERE telegramStatus = 'SUCCESS' OR whatsappStatus = 'SUCCESS' OR discordStatus = 'SUCCESS' OR webhookStatus = 'SUCCESS'")
     fun getSuccessCount(): Flow<Int>
 
     @Query("DELETE FROM sms_logs")

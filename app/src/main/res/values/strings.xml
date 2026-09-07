@@ -1,7 +1,130 @@
 <resources>
     <string name="app_name">SMS Forwarder</string>
+
+    <!-- Notification Channels -->
     <string name="channel_name_forwarder">SMS Forwarder Service</string>
     <string name="channel_desc_forwarder">Shows persistent notification when SMS forwarding service is active</string>
     <string name="channel_name_alerts">SMS Forwarder Alerts</string>
     <string name="channel_desc_alerts">Shows notifications for SMS draft sending or forwarding errors</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_logs">Logs</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">SMS Forwarder</string>
+    <string name="service_running">Forwarding Active</string>
+    <string name="service_stopped">Forwarding Paused</string>
+    <string name="service_status_desc_running">Monitoring dual-SIM incoming messages • Auto-forwarding enabled</string>
+    <string name="service_status_desc_stopped">Tap the switch to start background SMS monitoring</string>
+    <string name="stat_total">Total Received</string>
+    <string name="stat_success">Forwarded</string>
+    <string name="stat_failed">Failed</string>
+    <string name="stat_channels">Active Channels</string>
+    <string name="sim_cards_detected">Detected SIM Cards</string>
+    <string name="sim_slot">SIM %1$d</string>
+    <string name="no_sim_detected">No SIM cards detected</string>
+    <string name="permission_required_title">Permissions Required</string>
+    <string name="permission_required_desc">This app needs SMS, Phone State, and Notification permissions to monitor and forward your messages.</string>
+    <string name="grant_permissions">Grant Permissions</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="test_forward">Send Test Ping</string>
+    <string name="recent_activity">Recent Activity</string>
+    <string name="view_all_logs">View All Logs</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="section_general">General Settings</string>
+    <string name="app_language">App Language</string>
+    <string name="lang_system">System Default</string>
+    <string name="lang_en">English</string>
+    <string name="lang_fa">فارسی (Persian)</string>
+
+    <string name="section_sim_filtering">SIM Card Selection</string>
+    <string name="sim_filter_all">Forward from Both SIMs</string>
+    <string name="sim_filter_sim1">SIM 1 Only</string>
+    <string name="sim_filter_sim2">SIM 2 Only</string>
+
+    <!-- Channel: Telegram -->
+    <string name="channel_telegram">Telegram Forwarding</string>
+    <string name="telegram_enable">Enable Telegram Forwarding</string>
+    <string name="telegram_token">Bot Token</string>
+    <string name="telegram_token_hint">e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ</string>
+    <string name="telegram_chat_id">Chat ID</string>
+    <string name="telegram_chat_id_hint">e.g. -100123456789 or 987654321</string>
+    <string name="test_connection">Test Connection</string>
+
+    <!-- Channel: WhatsApp -->
+    <string name="channel_whatsapp">WhatsApp Forwarding</string>
+    <string name="whatsapp_enable">Enable WhatsApp Forwarding</string>
+    <string name="whatsapp_mode">Forwarding Mode</string>
+    <string name="wa_mode_callmebot">Automated (CallMeBot API)</string>
+    <string name="wa_mode_webhook">Automated (Custom Webhook)</string>
+    <string name="wa_mode_draft">Interactive Draft (Notification)</string>
+    <string name="callmebot_api_key">CallMeBot API Key</string>
+    <string name="callmebot_phone">Recipient Phone Number</string>
+    <string name="callmebot_phone_hint">+1234567890 (with country code)</string>
+    <string name="privacy_guard_title">Privacy Guard (OTP &amp; Banking)</string>
+    <string name="exclude_otp">Exclude sensitive messages (OTPs)</string>
+    <string name="redact_otp">Redact verification digits (e.g. ***)</string>
+
+    <!-- Channel: Discord -->
+    <string name="channel_discord">Discord Webhook</string>
+    <string name="discord_enable">Enable Discord Forwarding</string>
+    <string name="discord_webhook_url">Discord Webhook URL</string>
+    <string name="discord_hint">https://discord.com/api/webhooks/...</string>
+
+    <!-- Channel: Generic Webhook -->
+    <string name="channel_generic_webhook">Custom HTTP Webhook</string>
+    <string name="webhook_enable">Enable Custom Webhook</string>
+    <string name="webhook_url">Webhook URL (Gotify / n8n / REST)</string>
+    <string name="webhook_auth">Authorization Header (Optional)</string>
+    <string name="webhook_auth_hint">Bearer &lt;token&gt; or Key: Value</string>
+
+    <!-- 24/7 Reliability & Health -->
+    <string name="section_reliability">24/7 Reliability &amp; Device Health</string>
+    <string name="heartbeat_title">Periodic Heartbeat (Dead Man\'s Snitch)</string>
+    <string name="heartbeat_desc">Sends a status ping (battery, network, SIMs) every few hours to confirm the device is alive.</string>
+    <string name="heartbeat_enable">Enable Periodic Heartbeat</string>
+    <string name="heartbeat_interval">Interval: %1$d hours</string>
+    <string name="battery_alert_title">Low Battery Alert</string>
+    <string name="battery_alert_desc">Sends an emergency notification to Telegram/Discord when battery drops below 15%.</string>
+    <string name="battery_alert_enable">Enable Low Battery Alert</string>
+    <string name="battery_opt_title">Background Battery Exemption</string>
+    <string name="battery_opt_desc">Prevent Android and OEM battery managers (Xiaomi, Samsung, Huawei) from killing the forwarder.</string>
+    <string name="battery_opt_btn_exempt">Exempt from Battery Saver</string>
+    <string name="battery_opt_btn_oem">Open OEM Auto-Start Settings</string>
+    <string name="battery_opt_exempted">Status: Battery optimizations ignored (Protected)</string>
+    <string name="battery_opt_restricted">Status: Subject to Android battery restriction</string>
+
+    <!-- Message Template -->
+    <string name="section_template">Message Template</string>
+    <string name="template_desc">Variables: {sim}, {carrier}, {sender}, {message}, {time}, {date}</string>
+
+    <!-- Logs Screen -->
+    <string name="logs_title">Forwarding Logs</string>
+    <string name="tab_sms_logs">SMS Logs</string>
+    <string name="tab_diagnostics">System Diagnostics</string>
+    <string name="search_logs_hint">Search sender, message, carrier...</string>
+    <string name="filter_all">All</string>
+    <string name="filter_sim1">SIM 1</string>
+    <string name="filter_sim2">SIM 2</string>
+    <string name="filter_failed">Failed</string>
+    <string name="clear_logs">Clear All Logs</string>
+    <string name="clear_logs_confirm">Are you sure you want to permanently delete all logs?</string>
+    <string name="export_csv">Export to CSV</string>
+    <string name="no_logs_found">No logs match your search or filter</string>
+    <string name="no_diagnostics_found">No diagnostic events recorded yet</string>
+
+    <!-- Dialogs & Buttons -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="ok">OK</string>
+    <string name="success">Success</string>
+    <string name="failed">Failed</string>
+    <string name="skipped">Skipped</string>
+    <string name="disabled">Disabled</string>
+    <string name="retry">Retry</string>
 </resources>

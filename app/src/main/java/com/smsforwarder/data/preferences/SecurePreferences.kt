@@ -57,6 +57,18 @@ class SecurePreferences(context: Context) {
         get() = prefs.getString(KEY_WHATSAPP_DRAFT_PHONE, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_WHATSAPP_DRAFT_PHONE, value.trim()).apply()
 
+    var discordWebhookUrl: String
+        get() = prefs.getString(KEY_DISCORD_WEBHOOK_URL, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_DISCORD_WEBHOOK_URL, value.trim()).apply()
+
+    var genericWebhookUrl: String
+        get() = prefs.getString(KEY_GENERIC_WEBHOOK_URL, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_GENERIC_WEBHOOK_URL, value.trim()).apply()
+
+    var genericWebhookAuthHeader: String
+        get() = prefs.getString(KEY_GENERIC_WEBHOOK_AUTH, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_GENERIC_WEBHOOK_AUTH, value.trim()).apply()
+
     fun clearAllSecrets() {
         prefs.edit().clear().apply()
     }
@@ -72,5 +84,8 @@ class SecurePreferences(context: Context) {
         private const val KEY_CUSTOM_WEBHOOK_URL = "sec_webhook_url"
         private const val KEY_CUSTOM_WEBHOOK_AUTH = "sec_webhook_auth"
         private const val KEY_WHATSAPP_DRAFT_PHONE = "sec_wa_draft_phone"
+        private const val KEY_DISCORD_WEBHOOK_URL = "sec_discord_webhook_url"
+        private const val KEY_GENERIC_WEBHOOK_URL = "sec_generic_webhook_url"
+        private const val KEY_GENERIC_WEBHOOK_AUTH = "sec_generic_webhook_auth"
     }
 }

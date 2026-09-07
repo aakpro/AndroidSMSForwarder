@@ -1,0 +1,130 @@
+<resources>
+    <string name="app_name">هدایت پیامک</string>
+
+    <!-- Notification Channels -->
+    <string name="channel_name_forwarder">سرویس هدایت پیامک</string>
+    <string name="channel_desc_forwarder">نمایش اعلان پایدار هنگامی که سرویس هدایت پیامک فعال است</string>
+    <string name="channel_name_alerts">هشدارهای هدایت پیامک</string>
+    <string name="channel_desc_alerts">نمایش اعلان‌ها برای ارسال پیش‌نویس یا خطاهای ارسال</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">خانه</string>
+    <string name="nav_settings">تنظیمات</string>
+    <string name="nav_logs">گزارش‌ها</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">هدایت پیامک</string>
+    <string name="service_running">هدایت فعال است</string>
+    <string name="service_stopped">هدایت متوقف شد</string>
+    <string name="service_status_desc_running">در حال پایش پیامک‌های هر دو سیم‌کارت • هدایت خودکار فعال است</string>
+    <string name="service_status_desc_stopped">کلید را لمس کنید تا پایش پیامک‌ها در پس‌زمینه آغاز شود</string>
+    <string name="stat_total">کل دریافتی</string>
+    <string name="stat_success">ارسال موفق</string>
+    <string name="stat_failed">ناموفق</string>
+    <string name="stat_channels">کانال‌های فعال</string>
+    <string name="sim_cards_detected">سیم‌کارت‌های شناسایی‌شده</string>
+    <string name="sim_slot">سیم‌کارت %1$d</string>
+    <string name="no_sim_detected">هیچ سیم‌کارتی یافت نشد</string>
+    <string name="permission_required_title">دسترسی‌های لازم</string>
+    <string name="permission_required_desc">این برنامه برای پایش و هدایت پیامک‌ها به دسترسی پیامک، وضعیت تلفن و اعلان‌ها نیاز دارد.</string>
+    <string name="grant_permissions">اعطای دسترسی‌ها</string>
+    <string name="quick_actions">عملیات سریع</string>
+    <string name="test_forward">ارسال پیام آزمایشی</string>
+    <string name="recent_activity">فعالیت‌های اخیر</string>
+    <string name="view_all_logs">مشاهده همه گزارش‌ها</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">تنظیمات</string>
+    <string name="section_general">تنظیمات عمومی</string>
+    <string name="app_language">زبان برنامه</string>
+    <string name="lang_system">پیش‌فرض سیستم</string>
+    <string name="lang_en">English</string>
+    <string name="lang_fa">فارسی</string>
+
+    <string name="section_sim_filtering">انتخاب سیم‌کارت</string>
+    <string name="sim_filter_all">ارسال از هر دو سیم‌کارت</string>
+    <string name="sim_filter_sim1">فقط سیم‌کارت ۱</string>
+    <string name="sim_filter_sim2">فقط سیم‌کارت ۲</string>
+
+    <!-- Channel: Telegram -->
+    <string name="channel_telegram">هدایت به تلگرام</string>
+    <string name="telegram_enable">فعال‌سازی هدایت به تلگرام</string>
+    <string name="telegram_token">توکن ربات (Bot Token)</string>
+    <string name="telegram_token_hint">مثال: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ</string>
+    <string name="telegram_chat_id">شناسه چت (Chat ID)</string>
+    <string name="telegram_chat_id_hint">مثال: -100123456789 یا 987654321</string>
+    <string name="test_connection">تست اتصال</string>
+
+    <!-- Channel: WhatsApp -->
+    <string name="channel_whatsapp">هدایت به واتس‌اپ</string>
+    <string name="whatsapp_enable">فعال‌سازی هدایت به واتس‌اپ</string>
+    <string name="whatsapp_mode">حالت ارسال</string>
+    <string name="wa_mode_callmebot">خودکار (CallMeBot API)</string>
+    <string name="wa_mode_webhook">خودکار (وبهوک سفارشی)</string>
+    <string name="wa_mode_draft">پیش‌نویس تعاملی (اعلان)</string>
+    <string name="callmebot_api_key">کلید ای‌پی‌آی CallMeBot</string>
+    <string name="callmebot_phone">شماره تلفن دریافت‌کننده</string>
+    <string name="callmebot_phone_hint">+989123456789 (با کد کشور)</string>
+    <string name="privacy_guard_title">محافظ حریم خصوصی (رمز پویا و بانکی)</string>
+    <string name="exclude_otp">حذف و عدم ارسال پیام‌های حساس (رمز پویا)</string>
+    <string name="redact_otp">مخدوش‌سازی ارقام حساس (مانند ***)</string>
+
+    <!-- Channel: Discord -->
+    <string name="channel_discord">وبهوک دیسکورد (Discord)</string>
+    <string name="discord_enable">فعال‌سازی هدایت به دیسکورد</string>
+    <string name="discord_webhook_url">نشانی وبهوک دیسکورد</string>
+    <string name="discord_hint">https://discord.com/api/webhooks/...</string>
+
+    <!-- Channel: Generic Webhook -->
+    <string name="channel_generic_webhook">وبهوک سفارشی HTTP</string>
+    <string name="webhook_enable">فعال‌سازی وبهوک سفارشی</string>
+    <string name="webhook_url">نشانی وبهوک (Gotify / n8n / سرور اختصاصی)</string>
+    <string name="webhook_auth">هدر احراز هویت (اختیاری)</string>
+    <string name="webhook_auth_hint">Bearer &lt;token&gt; یا Key: Value</string>
+
+    <!-- 24/7 Reliability & Health -->
+    <string name="section_reliability">پایداری ۲۴/۷ و سلامت دستگاه</string>
+    <string name="heartbeat_title">پالس سلامت دوره‌ای (Heartbeat)</string>
+    <string name="heartbeat_desc">ارسال منظم وضعیت دستگاه (میزان باتری، شبکه، سیم‌کارت‌ها) جهت اطمینان از روشن بودن گوشی رله.</string>
+    <string name="heartbeat_enable">فعال‌سازی پالس سلامت دوره‌ای</string>
+    <string name="heartbeat_interval">بازه زمانی: هر %1$d ساعت</string>
+    <string name="battery_alert_title">هشدار باتری ضعیف</string>
+    <string name="battery_alert_desc">ارسال هشدار فوری به تلگرام/دیسکورد هنگام کاهش باتری به کمتر از ۱۵٪.</string>
+    <string name="battery_alert_enable">فعال‌سازی هشدار باتری ضعیف</string>
+    <string name="battery_opt_title">معافیت از محدودیت باتری</string>
+    <string name="battery_opt_desc">جلوگیری از بسته شدن برنامه توسط سیستم‌عامل (شیائومی، سامسونگ، هواوی).</string>
+    <string name="battery_opt_btn_exempt">معاف‌سازی از بهینه‌ساز باتری</string>
+    <string name="battery_opt_btn_oem">تنظیمات شروع خودکار (Auto-Start)</string>
+    <string name="battery_opt_exempted">وضعیت: بهینه‌سازی غیرفعال شد (محافظت‌شده)</string>
+    <string name="battery_opt_restricted">وضعیت: ممکن است برنامه توسط باتری متوقف شود</string>
+
+    <!-- Message Template -->
+    <string name="section_template">قالب پیامک ارسالی</string>
+    <string name="template_desc">متغیرها: {sim}، {carrier}، {sender}، {message}، {time}، {date}</string>
+
+    <!-- Logs Screen -->
+    <string name="logs_title">گزارش‌های ارسال</string>
+    <string name="tab_sms_logs">پیامک‌ها</string>
+    <string name="tab_diagnostics">عیب‌یابی سیستم</string>
+    <string name="search_logs_hint">جستجوی فرستنده، متن، اپراتور...</string>
+    <string name="filter_all">همه</string>
+    <string name="filter_sim1">سیم‌کارت ۱</string>
+    <string name="filter_sim2">سیم‌کارت ۲</string>
+    <string name="filter_failed">ناموفق</string>
+    <string name="clear_logs">پاک کردن همه گزارش‌ها</string>
+    <string name="clear_logs_confirm">آیا از حذف دائمی تمام گزارش‌ها اطمینان دارید؟</string>
+    <string name="export_csv">خروجی اکسل (CSV)</string>
+    <string name="no_logs_found">گزارشی با فیلتر مشخص‌شده یافت نشد</string>
+    <string name="no_diagnostics_found">هیچ رویداد تشخیصی ثبت نشده است</string>
+
+    <!-- Dialogs & Buttons -->
+    <string name="save">ذخیره</string>
+    <string name="cancel">لغو</string>
+    <string name="delete">حذف</string>
+    <string name="ok">تایید</string>
+    <string name="success">موفق</string>
+    <string name="failed">ناموفق</string>
+    <string name="skipped">صرف‌نظر شده</string>
+    <string name="disabled">غیرفعال</string>
+    <string name="retry">تلاش مجدد</string>
+</resources>
