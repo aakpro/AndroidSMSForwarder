@@ -16,6 +16,9 @@ import com.smsforwarder.data.preferences.SecurePreferences
 import com.smsforwarder.ui.navigation.AppNavigation
 import com.smsforwarder.ui.theme.SmsForwarderTheme
 import com.smsforwarder.util.PermissionHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -28,6 +31,8 @@ class MainActivity : ComponentActivity() {
 
         appPreferences = AppPreferences(applicationContext)
         securePreferences = SecurePreferences(applicationContext)
+
+        handleIntentExtras(intent)
 
         setContent {
             val appLanguage by appPreferences.appLanguage.collectAsState(initial = "system")
@@ -88,6 +93,26 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleIntentExtras(intent)
+    }
+
+    private fun handleIntentExtras(intent: android.content.Intent?) {
+        intent?.getStringExtra("extra_telegram_bot_token")?.let { token ->
+            if (token.isNotBlank()) securePreferences.telegramBotToken = token
+        }
+        intent?.getStringExtra("extra_telegram_chat_id")?.let { chatId ->
+            if (chatId.isNotBlank()) securePreferences.telegramChatId = chatId
+        }
+        if (intent?.hasExtra("extra_telegram_enabled") == true) {
+            val enabled = intent.getBooleanExtra("extra_telegram_enabled", true)
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                appPreferences.setTelegramEnabled(enabled)
             }
         }
     }
