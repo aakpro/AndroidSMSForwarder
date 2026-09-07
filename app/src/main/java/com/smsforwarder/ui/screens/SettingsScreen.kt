@@ -72,6 +72,23 @@ fun SettingsScreen(
     var genericWebhookUrl by remember { mutableStateOf(securePreferences.genericWebhookUrl) }
     var genericWebhookAuth by remember { mutableStateOf(securePreferences.genericWebhookAuthHeader) }
 
+    // Email (SMTP) State
+    val isEmailEnabled by appPreferences.isEmailEnabled.collectAsState(initial = false)
+    val smtpHost by appPreferences.smtpHost.collectAsState(initial = "smtp.gmail.com")
+    var emailHost by remember(smtpHost) { mutableStateOf(smtpHost) }
+    val smtpPort by appPreferences.smtpPort.collectAsState(initial = 587)
+    var emailPort by remember(smtpPort) { mutableStateOf(smtpPort.toString()) }
+    val smtpEncryption by appPreferences.smtpEncryption.collectAsState(initial = com.smsforwarder.data.preferences.SmtpEncryption.STARTTLS)
+    var emailUsername by remember { mutableStateOf(securePreferences.smtpUsername) }
+    var emailPassword by remember { mutableStateOf(securePreferences.smtpPassword) }
+    var isEmailPasswordVisible by remember { mutableStateOf(false) }
+    val emailFrom by appPreferences.emailFrom.collectAsState(initial = "")
+    var emailFromField by remember(emailFrom) { mutableStateOf(emailFrom) }
+    val emailRecipients by appPreferences.emailRecipients.collectAsState(initial = "")
+    var emailRecipientsField by remember(emailRecipients) { mutableStateOf(emailRecipients) }
+    val emailSubjectTemplate by appPreferences.emailSubjectTemplate.collectAsState(initial = AppPreferences.DEFAULT_EMAIL_SUBJECT)
+    var emailSubjectField by remember(emailSubjectTemplate) { mutableStateOf(emailSubjectTemplate) }
+
     // Reliability & Health State
     val isHeartbeatEnabled by appPreferences.isHeartbeatEnabled.collectAsState(initial = false)
     val heartbeatInterval by appPreferences.heartbeatIntervalHours.collectAsState(initial = 12)
@@ -89,6 +106,7 @@ fun SettingsScreen(
     val whatsAppSender = remember { WhatsAppSender(context, securePreferences) }
     val discordSender = remember { DiscordSender(securePreferences) }
     val genericWebhookSender = remember { GenericWebhookSender(securePreferences) }
+    val emailSender = remember { com.smsforwarder.sender.EmailSender(context, appPreferences, securePreferences) }
 
     if (showCallMeBotWarning) {
         CallMeBotWarningDialog(
@@ -493,7 +511,223 @@ fun SettingsScreen(
             }
 
             // ==========================================
-            // Section 5: 24/7 Relay Reliability & Health
+            // Section 5: Email (SMTP) Forwarding
+            // ==========================================
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(R.string.channel_email), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Switch(
+                            checked = isEmailEnabled,
+                            onCheckedChange = { checked ->
+                                coroutineScope.launch { appPreferences.setEmailEnabled(checked) }
+                            }
+                        )
+                    }
+
+                    // Quick Provider Presets
+                    Text(text = "Quick Presets:", style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = emailHost == "smtp.gmail.com" && emailPort == "587",
+                            onClick = {
+                                emailHost = "smtp.gmail.com"
+                                emailPort = "587"
+                                coroutineScope.launch {
+                                    appPreferences.setSmtpHost("smtp.gmail.com")
+                                    appPreferences.setSmtpPort(587)
+                                    appPreferences.setSmtpEncryption(com.smsforwarder.data.preferences.SmtpEncryption.STARTTLS)
+                                }
+                            },
+                            label = { Text("Gmail") }
+                        )
+                        FilterChip(
+                            selected = emailHost == "smtp.office365.com",
+                            onClick = {
+                                emailHost = "smtp.office365.com"
+                                emailPort = "587"
+                                coroutineScope.launch {
+                                    appPreferences.setSmtpHost("smtp.office365.com")
+                                    appPreferences.setSmtpPort(587)
+                                    appPreferences.setSmtpEncryption(com.smsforwarder.data.preferences.SmtpEncryption.STARTTLS)
+                                }
+                            },
+                            label = { Text("Outlook") }
+                        )
+                        FilterChip(
+                            selected = emailHost == "smtp.mail.yahoo.com",
+                            onClick = {
+                                emailHost = "smtp.mail.yahoo.com"
+                                emailPort = "465"
+                                coroutineScope.launch {
+                                    appPreferences.setSmtpHost("smtp.mail.yahoo.com")
+                                    appPreferences.setSmtpPort(465)
+                                    appPreferences.setSmtpEncryption(com.smsforwarder.data.preferences.SmtpEncryption.SSL_TLS)
+                                }
+                            },
+                            label = { Text("Yahoo") }
+                        )
+                    }
+
+                    // Host & Port Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = emailHost,
+                            onValueChange = {
+                                emailHost = it
+                                coroutineScope.launch { appPreferences.setSmtpHost(it) }
+                            },
+                            label = { Text(stringResource(R.string.smtp_host)) },
+                            placeholder = { Text(stringResource(R.string.smtp_host_hint)) },
+                            modifier = Modifier.weight(2f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = emailPort,
+                            onValueChange = {
+                                emailPort = it
+                                it.toIntOrNull()?.let { p ->
+                                    coroutineScope.launch { appPreferences.setSmtpPort(p) }
+                                }
+                            },
+                            label = { Text(stringResource(R.string.smtp_port)) },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
+
+                    // Encryption Mode
+                    Text(text = stringResource(R.string.smtp_encryption), style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        com.smsforwarder.data.preferences.SmtpEncryption.entries.forEach { enc ->
+                            FilterChip(
+                                selected = smtpEncryption == enc,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        appPreferences.setSmtpEncryption(enc)
+                                        if (emailPort.isBlank() || emailPort == "587" || emailPort == "465" || emailPort == "25") {
+                                            emailPort = enc.defaultPort.toString()
+                                            appPreferences.setSmtpPort(enc.defaultPort)
+                                        }
+                                    }
+                                },
+                                label = { Text(enc.title) }
+                            )
+                        }
+                    }
+
+                    // Username
+                    OutlinedTextField(
+                        value = emailUsername,
+                        onValueChange = {
+                            emailUsername = it
+                            securePreferences.smtpUsername = it
+                        },
+                        label = { Text(stringResource(R.string.smtp_username)) },
+                        placeholder = { Text(stringResource(R.string.smtp_username_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true
+                    )
+
+                    // Password / App Password
+                    OutlinedTextField(
+                        value = emailPassword,
+                        onValueChange = {
+                            emailPassword = it
+                            securePreferences.smtpPassword = it
+                        },
+                        label = { Text(stringResource(R.string.smtp_password)) },
+                        placeholder = { Text(stringResource(R.string.smtp_password_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = if (isEmailPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { isEmailPasswordVisible = !isEmailPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (isEmailPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true
+                    )
+
+                    // Recipient(s)
+                    OutlinedTextField(
+                        value = emailRecipientsField,
+                        onValueChange = {
+                            emailRecipientsField = it
+                            coroutineScope.launch { appPreferences.setEmailRecipients(it) }
+                        },
+                        label = { Text(stringResource(R.string.email_recipients)) },
+                        placeholder = { Text(stringResource(R.string.email_recipients_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = false,
+                        maxLines = 2
+                    )
+
+                    // Subject Template
+                    OutlinedTextField(
+                        value = emailSubjectField,
+                        onValueChange = {
+                            emailSubjectField = it
+                            coroutineScope.launch { appPreferences.setEmailSubjectTemplate(it) }
+                        },
+                        label = { Text(stringResource(R.string.email_subject_template)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Button(
+                        onClick = {
+                            isTestingConnection = true
+                            coroutineScope.launch {
+                                val result = emailSender.testConnection(
+                                    host = emailHost,
+                                    port = emailPort.toIntOrNull() ?: 587,
+                                    encryption = smtpEncryption,
+                                    username = emailUsername,
+                                    password = emailPassword,
+                                    from = emailFromField,
+                                    recipientsRaw = emailRecipientsField
+                                )
+                                isTestingConnection = false
+                                testResultDialogText = if (result.isSuccess) {
+                                    "✅ ${result.getOrNull()}"
+                                } else {
+                                    "❌ Email Test Failed:\n${result.exceptionOrNull()?.message}"
+                                }
+                            }
+                        },
+                        enabled = emailHost.isNotBlank() && emailRecipientsField.isNotBlank() && !isTestingConnection
+                    ) {
+                        Text(stringResource(R.string.test_email))
+                    }
+                }
+            }
+
+            // ==========================================
+            // Section 6: 24/7 Relay Reliability & Health
             // ==========================================
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

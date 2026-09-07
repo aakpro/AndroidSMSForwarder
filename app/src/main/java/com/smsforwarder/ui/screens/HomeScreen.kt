@@ -43,6 +43,7 @@ fun HomeScreen(
     val isWhatsAppEnabled by appPreferences.isWhatsAppEnabled.collectAsState(initial = false)
     val isDiscordEnabled by appPreferences.isDiscordEnabled.collectAsState(initial = false)
     val isWebhookEnabled by appPreferences.isGenericWebhookEnabled.collectAsState(initial = false)
+    val isEmailEnabled by appPreferences.isEmailEnabled.collectAsState(initial = false)
     val isHeartbeatEnabled by appPreferences.isHeartbeatEnabled.collectAsState(initial = false)
 
     var activeSims by remember { mutableStateOf<List<SimCardInfo>>(emptyList()) }
@@ -261,6 +262,21 @@ fun HomeScreen(
                         checked = isWebhookEnabled,
                         onCheckedChange = { checked ->
                             coroutineScope.launch { appPreferences.setGenericWebhookEnabled(checked) }
+                        }
+                    )
+                }
+            )
+
+            StatusCard(
+                title = stringResource(R.string.channel_email),
+                subtitle = if (isEmailEnabled) "Enabled (SMTP Direct Relay)" else "Disabled (Configure in Settings)",
+                isActive = isEmailEnabled,
+                icon = Icons.Default.Email,
+                trailingContent = {
+                    Switch(
+                        checked = isEmailEnabled,
+                        onCheckedChange = { checked ->
+                            coroutineScope.launch { appPreferences.setEmailEnabled(checked) }
                         }
                     )
                 }

@@ -22,7 +22,7 @@ object LogExporter {
 
             FileWriter(file).use { writer ->
                 // Header
-                writer.append("ID,Timestamp,Date,SIM_Slot,Carrier,Sender,Message,Sensitive,Telegram,WhatsApp,Discord,Webhook,Duration_ms,Battery_pct,Network,Error\n")
+                writer.append("ID,Timestamp,Date,SIM_Slot,Carrier,Sender,Message,Sensitive,Telegram,WhatsApp,Discord,Webhook,Email,Duration_ms,Battery_pct,Network,Error\n")
 
                 val dateFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 for (log in logs) {
@@ -42,6 +42,7 @@ object LogExporter {
                     writer.append("${log.whatsappStatus},")
                     writer.append("${log.discordStatus},")
                     writer.append("${log.webhookStatus},")
+                    writer.append("${log.emailStatus},")
                     writer.append("${log.durationMs},")
                     writer.append("${log.batteryLevel},")
                     writer.append("\"${escapeCsv(log.networkType)}\",")

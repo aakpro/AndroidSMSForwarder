@@ -82,6 +82,26 @@
     <string name="webhook_auth">Authorization Header (Optional)</string>
     <string name="webhook_auth_hint">Bearer &lt;token&gt; or Key: Value</string>
 
+    <!-- Channel: Email (SMTP) -->
+    <string name="channel_email">Email (SMTP) Forwarding</string>
+    <string name="email_enable">Enable Email Forwarding</string>
+    <string name="smtp_host">SMTP Host</string>
+    <string name="smtp_host_hint">e.g. smtp.gmail.com</string>
+    <string name="smtp_port">Port</string>
+    <string name="smtp_encryption">Encryption</string>
+    <string name="smtp_username">Username / Email</string>
+    <string name="smtp_username_hint">user@gmail.com</string>
+    <string name="smtp_password">Password / App Password</string>
+    <string name="smtp_password_hint">16-character App Password</string>
+    <string name="email_from">Sender Address (From)</string>
+    <string name="email_from_hint">Optional, defaults to username</string>
+    <string name="email_recipients">Recipient Email(s)</string>
+    <string name="email_recipients_hint">recipient1@example.com, recipient2@example.com</string>
+    <string name="email_subject_template">Email Subject Template</string>
+    <string name="test_email">Test Email Connection</string>
+    <string name="test_email_success">Test email delivered successfully!</string>
+    <string name="test_email_failed">Email test failed: %1$s</string>
+
     <!-- 24/7 Reliability & Health -->
     <string name="section_reliability">24/7 Reliability &amp; Device Health</string>
     <string name="heartbeat_title">Periodic Heartbeat (Dead Man\'s Snitch)</string>
