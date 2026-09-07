@@ -27,8 +27,14 @@ jobs:
       - name: Make Gradle Wrapper Executable
         run: chmod +x gradlew
 
+      - name: Ensure Release Keystore Exists
+        run: |
+          if [ ! -f "release.keystore" ]; then
+            keytool -genkeypair -v -keystore release.keystore -alias smsforwarder -keyalg RSA -keysize 2048 -validity 10000 -storepass smsforwarder123 -keypass smsforwarder123 -dname "CN=SMSForwarder, OU=Dev, O=SMSForwarder, C=US"
+          fi
+
       - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Create GitHub Release and Upload APK
         uses: softprops/action-gh-release@v2
