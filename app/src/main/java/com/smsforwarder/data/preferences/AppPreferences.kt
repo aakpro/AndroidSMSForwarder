@@ -35,6 +35,12 @@ class AppPreferences(private val context: Context) {
         val REDACT_OTP_CALLMEBOT = booleanPreferencesKey("redact_otp_callmebot")
         val CALLMEBOT_WARNING_ACCEPTED = booleanPreferencesKey("callmebot_warning_accepted")
         val MESSAGE_TEMPLATE = stringPreferencesKey("message_template")
+        val DISCORD_ENABLED = booleanPreferencesKey("discord_enabled")
+        val GENERIC_WEBHOOK_ENABLED = booleanPreferencesKey("generic_webhook_enabled")
+        val HEARTBEAT_ENABLED = booleanPreferencesKey("heartbeat_enabled")
+        val HEARTBEAT_INTERVAL_HOURS = intPreferencesKey("heartbeat_interval_hours")
+        val LOW_BATTERY_ALERT_ENABLED = booleanPreferencesKey("low_battery_alert_enabled")
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
     }
 
     val isServiceEnabled: Flow<Boolean> = context.dataStore.data
@@ -107,6 +113,54 @@ class AppPreferences(private val context: Context) {
 
     suspend fun setMessageTemplate(template: String) {
         context.dataStore.edit { it[PreferencesKeys.MESSAGE_TEMPLATE] = template }
+    }
+
+    val isDiscordEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.DISCORD_ENABLED] ?: false }
+
+    suspend fun setDiscordEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.DISCORD_ENABLED] = enabled }
+    }
+
+    val isGenericWebhookEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.GENERIC_WEBHOOK_ENABLED] ?: false }
+
+    suspend fun setGenericWebhookEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.GENERIC_WEBHOOK_ENABLED] = enabled }
+    }
+
+    val isHeartbeatEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.HEARTBEAT_ENABLED] ?: false }
+
+    suspend fun setHeartbeatEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.HEARTBEAT_ENABLED] = enabled }
+    }
+
+    val heartbeatIntervalHours: Flow<Int> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.HEARTBEAT_INTERVAL_HOURS] ?: 12 }
+
+    suspend fun setHeartbeatIntervalHours(hours: Int) {
+        context.dataStore.edit { it[PreferencesKeys.HEARTBEAT_INTERVAL_HOURS] = hours }
+    }
+
+    val isLowBatteryAlertEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.LOW_BATTERY_ALERT_ENABLED] ?: true }
+
+    suspend fun setLowBatteryAlertEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.LOW_BATTERY_ALERT_ENABLED] = enabled }
+    }
+
+    val appLanguage: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.APP_LANGUAGE] ?: "system" }
+
+    suspend fun setAppLanguage(lang: String) {
+        context.dataStore.edit { it[PreferencesKeys.APP_LANGUAGE] = lang }
     }
 
     companion object {

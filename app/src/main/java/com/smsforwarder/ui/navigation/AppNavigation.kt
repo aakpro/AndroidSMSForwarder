@@ -28,9 +28,10 @@ fun AppNavigation(
             NavigationBar {
                 Screen.bottomNavItems.forEach { screen ->
                     val isSelected = currentDestination?.route == screen.route
+                    val title = androidx.compose.ui.res.stringResource(screen.titleRes)
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
+                        icon = { Icon(screen.icon, contentDescription = title) },
+                        label = { Text(title) },
                         selected = isSelected,
                         onClick = {
                             if (!isSelected) {

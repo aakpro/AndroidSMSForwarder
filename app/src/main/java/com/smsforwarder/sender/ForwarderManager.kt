@@ -18,17 +18,27 @@ class ForwarderManager(
     private val securePreferences: SecurePreferences,
     private val telegramSender: TelegramSender = TelegramSender(securePreferences),
     private val whatsAppSender: WhatsAppSender = WhatsAppSender(context, securePreferences),
+    private val discordSender: DiscordSender = DiscordSender(securePreferences),
+    private val genericWebhookSender: GenericWebhookSender = GenericWebhookSender(securePreferences),
     private val database: AppDatabase = AppDatabase.getInstance(context)
 ) {
 
     suspend fun forwardSms(sms: SmsMessageItem, logId: Long): Boolean {
+        val startTime = System.currentTimeMillis()
         val isTelegramEnabled = appPreferences.isTelegramEnabled.first()
         val isWhatsAppEnabled = appPreferences.isWhatsAppEnabled.first()
+        val isDiscordEnabled = appPreferences.isDiscordEnabled.first()
+        val isWebhookEnabled = appPreferences.isGenericWebhookEnabled.first()
         val template = appPreferences.messageTemplate.first()
         val isSensitive = SensitiveFilter.isSensitiveMessage(sms.body)
 
+        val batteryInfo = com.smsforwarder.util.NetworkUtil.getBatteryInfo(context)
+        val networkType = com.smsforwarder.util.NetworkUtil.getNetworkType(context)
+
         var telegramStatus = ForwardStatus.DISABLED.name
         var whatsAppStatus = ForwardStatus.DISABLED.name
+        var discordStatus = ForwardStatus.DISABLED.name
+        var webhookStatus = ForwardStatus.DISABLED.name
         var combinedError: String? = null
 
         // 1. Process Telegram Forwarding
@@ -109,11 +119,70 @@ class ForwarderManager(
             }
         }
 
-        // 3. Update status in Room Database
-        database.smsLogDao().updateStatus(logId, telegramStatus, whatsAppStatus, combinedError)
+        // 3. Process Discord Forwarding
+        if (isDiscordEnabled) {
+            val plainText = TemplateFormatter.format(template, sms, escapeHtml = false)
+            val result = discordSender.sendSms(sms, plainText)
+            if (result.isSuccess) {
+                discordStatus = ForwardStatus.SUCCESS.name
+                Log.d(TAG, "SMS #$logId forwarded to Discord")
+            } else {
+                discordStatus = ForwardStatus.FAILED.name
+                val err = result.exceptionOrNull()?.message ?: "Discord unknown error"
+                combinedError = (combinedError?.let { "$it; " } ?: "") + "Discord: $err"
+                Log.e(TAG, "SMS #$logId failed Discord forwarding: $err")
+            }
+        }
 
-        return (telegramStatus == ForwardStatus.SUCCESS.name || telegramStatus == ForwardStatus.DISABLED.name) &&
-                (whatsAppStatus == ForwardStatus.SUCCESS.name || whatsAppStatus == ForwardStatus.DISABLED.name || whatsAppStatus.startsWith(ForwardStatus.SKIPPED.name))
+        // 4. Process Generic Webhook Forwarding
+        if (isWebhookEnabled) {
+            val result = genericWebhookSender.sendSms(sms)
+            if (result.isSuccess) {
+                webhookStatus = ForwardStatus.SUCCESS.name
+                Log.d(TAG, "SMS #$logId forwarded to Generic Webhook")
+            } else {
+                webhookStatus = ForwardStatus.FAILED.name
+                val err = result.exceptionOrNull()?.message ?: "Webhook unknown error"
+                combinedError = (combinedError?.let { "$it; " } ?: "") + "Generic Webhook: $err"
+                Log.e(TAG, "SMS #$logId failed Generic Webhook forwarding: $err")
+            }
+        }
+
+        val durationMs = System.currentTimeMillis() - startTime
+
+        // 5. Update status and diagnostics in Room Database
+        database.smsLogDao().updateAllStatuses(
+            id = logId,
+            telegramStatus = telegramStatus,
+            whatsappStatus = whatsAppStatus,
+            discordStatus = discordStatus,
+            webhookStatus = webhookStatus,
+            durationMs = durationMs,
+            batteryLevel = batteryInfo.percentage,
+            networkType = networkType,
+            error = combinedError
+        )
+
+        if (combinedError != null) {
+            database.diagnosticLogDao().insertLog(
+                com.smsforwarder.data.local.DiagnosticLogEntity(
+                    timestamp = System.currentTimeMillis(),
+                    eventType = com.smsforwarder.data.local.DiagnosticEventType.ERROR.name,
+                    message = "Forwarding failed for SMS from ${sms.sender}: $combinedError",
+                    batteryLevel = batteryInfo.percentage,
+                    isCharging = batteryInfo.isCharging,
+                    networkType = networkType,
+                    details = "Duration: ${durationMs}ms, SIM: ${sms.simSlotIndex}"
+                )
+            )
+        }
+
+        val tgOk = telegramStatus == ForwardStatus.SUCCESS.name || telegramStatus == ForwardStatus.DISABLED.name
+        val waOk = whatsAppStatus == ForwardStatus.SUCCESS.name || whatsAppStatus == ForwardStatus.DISABLED.name || whatsAppStatus.startsWith(ForwardStatus.SKIPPED.name)
+        val dcOk = discordStatus == ForwardStatus.SUCCESS.name || discordStatus == ForwardStatus.DISABLED.name
+        val whOk = webhookStatus == ForwardStatus.SUCCESS.name || webhookStatus == ForwardStatus.DISABLED.name
+
+        return tgOk && waOk && dcOk && whOk
     }
 
     companion object {

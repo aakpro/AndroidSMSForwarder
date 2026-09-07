@@ -19,6 +19,7 @@ ifndef ANDROID_HOME
   ifneq ($(DETECTED_SDK),)
     export ANDROID_HOME := $(DETECTED_SDK)
     export ANDROID_SDK_ROOT := $(DETECTED_SDK)
+    export PATH := $(DETECTED_SDK)/platform-tools:$(DETECTED_SDK)/emulator:$(PATH)
   endif
 endif
 

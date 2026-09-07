@@ -30,34 +30,63 @@ class MainActivity : ComponentActivity() {
         securePreferences = SecurePreferences(applicationContext)
 
         setContent {
-            SmsForwarderTheme {
-                var permissionsGranted by remember {
-                    mutableStateOf(PermissionHelper.hasAllRequiredPermissions(this))
+            val appLanguage by appPreferences.appLanguage.collectAsState(initial = "system")
+            val layoutDirection = remember(appLanguage) {
+                com.smsforwarder.util.LocaleHelper.getLayoutDirection(appLanguage)
+            }
+            val locale = remember(appLanguage) {
+                com.smsforwarder.util.LocaleHelper.getLocale(appLanguage)
+            }
+            val currentConfig = androidx.compose.ui.platform.LocalConfiguration.current
+            val localizedConfig = remember(appLanguage, currentConfig) {
+                android.content.res.Configuration(currentConfig).apply {
+                    setLocale(locale)
+                    setLayoutDirection(locale)
                 }
+            }
 
-                val permissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestMultiplePermissions()
-                ) { result ->
-                    permissionsGranted = PermissionHelper.hasAllRequiredPermissions(this)
-                }
+            LaunchedEffect(appLanguage) {
+                java.util.Locale.setDefault(locale)
+                val config = resources.configuration
+                config.setLocale(locale)
+                config.setLayoutDirection(locale)
+                @Suppress("DEPRECATION")
+                resources.updateConfiguration(config, resources.displayMetrics)
+            }
 
-                LaunchedEffect(Unit) {
-                    if (!permissionsGranted) {
-                        permissionLauncher.launch(PermissionHelper.REQUIRED_PERMISSIONS)
+            CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalConfiguration provides localizedConfig,
+                androidx.compose.ui.platform.LocalLayoutDirection provides layoutDirection
+            ) {
+                SmsForwarderTheme {
+                    var permissionsGranted by remember {
+                        mutableStateOf(PermissionHelper.hasAllRequiredPermissions(this@MainActivity))
                     }
-                }
 
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavigation(
-                        appPreferences = appPreferences,
-                        securePreferences = securePreferences,
-                        onRequestPermissions = {
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestMultiplePermissions()
+                    ) { result ->
+                        permissionsGranted = PermissionHelper.hasAllRequiredPermissions(this@MainActivity)
+                    }
+
+                    LaunchedEffect(Unit) {
+                        if (!permissionsGranted) {
                             permissionLauncher.launch(PermissionHelper.REQUIRED_PERMISSIONS)
                         }
-                    )
+                    }
+
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        AppNavigation(
+                            appPreferences = appPreferences,
+                            securePreferences = securePreferences,
+                            onRequestPermissions = {
+                                permissionLauncher.launch(PermissionHelper.REQUIRED_PERMISSIONS)
+                            }
+                        )
+                    }
                 }
             }
         }

@@ -1,6 +1,5 @@
 package com.smsforwarder.ui.screens
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,7 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.smsforwarder.R
 import com.smsforwarder.data.local.AppDatabase
 import com.smsforwarder.data.model.SimCardInfo
 import com.smsforwarder.data.model.SimFilterOption
@@ -21,6 +22,7 @@ import com.smsforwarder.service.SmsForwarderService
 import com.smsforwarder.ui.components.PermissionBanner
 import com.smsforwarder.ui.components.SimCardSelector
 import com.smsforwarder.ui.components.StatusCard
+import com.smsforwarder.util.NetworkUtil
 import com.smsforwarder.util.PermissionHelper
 import com.smsforwarder.util.SimUtil
 import kotlinx.coroutines.launch
@@ -39,9 +41,14 @@ fun HomeScreen(
     val simFilter by appPreferences.simFilter.collectAsState(initial = SimFilterOption.ALL)
     val isTelegramEnabled by appPreferences.isTelegramEnabled.collectAsState(initial = false)
     val isWhatsAppEnabled by appPreferences.isWhatsAppEnabled.collectAsState(initial = false)
+    val isDiscordEnabled by appPreferences.isDiscordEnabled.collectAsState(initial = false)
+    val isWebhookEnabled by appPreferences.isGenericWebhookEnabled.collectAsState(initial = false)
+    val isHeartbeatEnabled by appPreferences.isHeartbeatEnabled.collectAsState(initial = false)
 
     var activeSims by remember { mutableStateOf<List<SimCardInfo>>(emptyList()) }
     var missingPermissions by remember { mutableStateOf<List<String>>(emptyList()) }
+    var batteryInfo by remember { mutableStateOf(NetworkUtil.getBatteryInfo(context)) }
+    var networkType by remember { mutableStateOf(NetworkUtil.getNetworkType(context)) }
 
     val database = remember { AppDatabase.getInstance(context) }
     val totalCount by database.smsLogDao().getTotalCount().collectAsState(initial = 0)
@@ -52,12 +59,14 @@ fun HomeScreen(
         if (missingPermissions.isEmpty()) {
             activeSims = SimUtil(context).getActiveSimCards()
         }
+        batteryInfo = NetworkUtil.getBatteryInfo(context)
+        networkType = NetworkUtil.getNetworkType(context)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "SMS Forwarder") },
+                title = { Text(text = stringResource(R.string.home_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -107,11 +116,11 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (isServiceEnabled) "Service Active" else "Service Paused",
+                            text = if (isServiceEnabled) stringResource(R.string.service_running) else stringResource(R.string.service_stopped),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = if (isServiceEnabled) "Forwarding incoming SMS 24/7" else "Tap toggle to activate background listener",
+                            text = if (isServiceEnabled) stringResource(R.string.service_status_desc_running) else stringResource(R.string.service_status_desc_stopped),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -131,6 +140,58 @@ fun HomeScreen(
                 }
             }
 
+            // Relay Device Health Quick Info
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (batteryInfo.isCharging) Icons.Default.BatteryChargingFull else Icons.Default.Battery5Bar,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "${batteryInfo.percentage}% (${if (batteryInfo.isCharging) "Charging" else "Battery"})",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (networkType == "Wi-Fi") Icons.Default.Wifi else Icons.Default.NetworkCell,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(text = networkType, style = MaterialTheme.typography.labelMedium)
+                    }
+
+                    if (isHeartbeatEnabled) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(text = "Heartbeat ON", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+
             // Dual-SIM Selector
             SimCardSelector(
                 activeSims = activeSims,
@@ -143,10 +204,10 @@ fun HomeScreen(
             )
 
             // Destination Status Cards
-            Text(text = "Destinations", style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.stat_channels), style = MaterialTheme.typography.titleMedium)
 
             StatusCard(
-                title = "Telegram Bot",
+                title = stringResource(R.string.channel_telegram),
                 subtitle = if (isTelegramEnabled) "Enabled (24/7 Bot API)" else "Disabled (Configure in Settings)",
                 isActive = isTelegramEnabled,
                 icon = Icons.AutoMirrored.Filled.Send,
@@ -161,7 +222,7 @@ fun HomeScreen(
             )
 
             StatusCard(
-                title = "WhatsApp",
+                title = stringResource(R.string.channel_whatsapp),
                 subtitle = if (isWhatsAppEnabled) "Enabled" else "Disabled (Configure in Settings)",
                 isActive = isWhatsAppEnabled,
                 icon = Icons.AutoMirrored.Filled.Chat,
@@ -170,6 +231,36 @@ fun HomeScreen(
                         checked = isWhatsAppEnabled,
                         onCheckedChange = { checked ->
                             coroutineScope.launch { appPreferences.setWhatsAppEnabled(checked) }
+                        }
+                    )
+                }
+            )
+
+            StatusCard(
+                title = stringResource(R.string.channel_discord),
+                subtitle = if (isDiscordEnabled) "Enabled (Rich Embeds)" else "Disabled (Configure in Settings)",
+                isActive = isDiscordEnabled,
+                icon = Icons.Default.Share,
+                trailingContent = {
+                    Switch(
+                        checked = isDiscordEnabled,
+                        onCheckedChange = { checked ->
+                            coroutineScope.launch { appPreferences.setDiscordEnabled(checked) }
+                        }
+                    )
+                }
+            )
+
+            StatusCard(
+                title = stringResource(R.string.channel_generic_webhook),
+                subtitle = if (isWebhookEnabled) "Enabled (Custom JSON POST)" else "Disabled (Configure in Settings)",
+                isActive = isWebhookEnabled,
+                icon = Icons.Default.Http,
+                trailingContent = {
+                    Switch(
+                        checked = isWebhookEnabled,
+                        onCheckedChange = { checked ->
+                            coroutineScope.launch { appPreferences.setGenericWebhookEnabled(checked) }
                         }
                     )
                 }
@@ -188,7 +279,7 @@ fun HomeScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = "$totalCount", style = MaterialTheme.typography.headlineMedium)
-                        Text(text = "Total Received", style = MaterialTheme.typography.labelSmall)
+                        Text(text = stringResource(R.string.stat_total), style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -196,7 +287,7 @@ fun HomeScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Text(text = "Forwarded OK", style = MaterialTheme.typography.labelSmall)
+                        Text(text = stringResource(R.string.stat_success), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

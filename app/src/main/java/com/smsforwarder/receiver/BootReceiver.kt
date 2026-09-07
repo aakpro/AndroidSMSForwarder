@@ -35,6 +35,12 @@ class BootReceiver : BroadcastReceiver() {
                         context.startService(serviceIntent)
                     }
                 }
+
+                val isHeartbeatEnabled = appPreferences.isHeartbeatEnabled.first()
+                if (isHeartbeatEnabled) {
+                    val interval = appPreferences.heartbeatIntervalHours.first()
+                    com.smsforwarder.worker.HeartbeatWorker.schedule(context, interval)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in BootReceiver restart", e)
             } finally {
