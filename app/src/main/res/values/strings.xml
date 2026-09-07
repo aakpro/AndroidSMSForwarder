@@ -102,6 +102,31 @@
     <string name="test_email_success">Test email delivered successfully!</string>
     <string name="test_email_failed">Email test failed: %1$s</string>
 
+    <!-- Smart Keyword Filtering -->
+    <string name="section_smart_filter">Smart Keyword &amp; Sender Filtering</string>
+    <string name="filter_desc">Filter incoming SMS by keywords or sender, block spam, or route messages to specific channels.</string>
+    <string name="add_filter_rule">Add Rule</string>
+    <string name="rule_name">Rule Name</string>
+    <string name="rule_pattern">Keywords / Pattern</string>
+    <string name="rule_pattern_hint">e.g. offer, discount, win free or regex</string>
+    <string name="rule_match_field">Match Target</string>
+    <string name="rule_match_type">Match Condition</string>
+    <string name="rule_action">Action</string>
+    <string name="rule_channels">Target Channels</string>
+    <string name="test_sandbox_hint">Type sample SMS here to test filter rules...</string>
+    <string name="preset_spam">Add Spam Blocker Preset</string>
+    <string name="preset_banking">Add Banking/OTP Priority Preset</string>
+    <string name="no_rules_configured">No filter rules configured. All messages will be forwarded normally.</string>
+
+    <!-- SMS Auto-Reply -->
+    <string name="section_auto_reply">SMS Auto-Reply &amp; Response</string>
+    <string name="auto_reply_desc">Automatically dispatch an SMS reply back to the sender with anti-loop protection.</string>
+    <string name="auto_reply_enable">Enable Automated SMS Reply</string>
+    <string name="auto_reply_template">Auto-Reply Template</string>
+    <string name="auto_reply_cooldown">Cooldown (Anti-Loop Debounce)</string>
+    <string name="auto_reply_sim">Reply SIM Card</string>
+    <string name="auto_reply_permission_warning">Grant SEND_SMS permission to enable automated replies.</string>
+
     <!-- 24/7 Reliability & Health -->
     <string name="section_reliability">24/7 Reliability &amp; Device Health</string>
     <string name="heartbeat_title">Periodic Heartbeat (Dead Man\'s Snitch)</string>
@@ -147,4 +172,17 @@
     <string name="skipped">Skipped</string>
     <string name="disabled">Disabled</string>
     <string name="retry">Retry</string>
+
+    <!-- Send & Receive on PC (Local Web Server) -->
+    <string name="pc_connect_title">Send &amp; Receive on PC</string>
+    <string name="pc_connect_subtitle">Access incoming SMS and send replies from your computer browser over local Wi-Fi.</string>
+    <string name="pc_server_enable">Enable Web Access (PC)</string>
+    <string name="pc_server_running">Web Server Running</string>
+    <string name="pc_server_stopped">Web Server Stopped</string>
+    <string name="pc_server_url">Browser Address</string>
+    <string name="pc_server_port">Port</string>
+    <string name="pc_server_pin">Security PIN</string>
+    <string name="pc_server_require_auth">Require PIN for Access</string>
+    <string name="pc_server_copied">Browser address copied to clipboard!</string>
+    <string name="pc_server_wifi_note">Your computer and phone must be connected to the same Wi-Fi / local network.</string>
 </resources>

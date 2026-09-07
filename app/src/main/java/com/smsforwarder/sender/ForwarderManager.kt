@@ -24,24 +24,41 @@ class ForwarderManager(
     private val database: AppDatabase = AppDatabase.getInstance(context)
 ) {
 
-    suspend fun forwardSms(sms: SmsMessageItem, logId: Long): Boolean {
+    suspend fun forwardSms(
+        sms: SmsMessageItem,
+        logId: Long,
+        allowedChannels: Set<String>? = null
+    ): Boolean {
         val startTime = System.currentTimeMillis()
-        val isTelegramEnabled = appPreferences.isTelegramEnabled.first()
-        val isWhatsAppEnabled = appPreferences.isWhatsAppEnabled.first()
-        val isDiscordEnabled = appPreferences.isDiscordEnabled.first()
-        val isWebhookEnabled = appPreferences.isGenericWebhookEnabled.first()
-        val isEmailEnabled = appPreferences.isEmailEnabled.first()
+        val rawTelegramEnabled = appPreferences.isTelegramEnabled.first()
+        val rawWhatsAppEnabled = appPreferences.isWhatsAppEnabled.first()
+        val rawDiscordEnabled = appPreferences.isDiscordEnabled.first()
+        val rawWebhookEnabled = appPreferences.isGenericWebhookEnabled.first()
+        val rawEmailEnabled = appPreferences.isEmailEnabled.first()
+
+        val isTelegramAllowed = allowedChannels == null || allowedChannels.contains("TELEGRAM")
+        val isWhatsAppAllowed = allowedChannels == null || allowedChannels.contains("WHATSAPP")
+        val isDiscordAllowed = allowedChannels == null || allowedChannels.contains("DISCORD")
+        val isWebhookAllowed = allowedChannels == null || allowedChannels.contains("WEBHOOK")
+        val isEmailAllowed = allowedChannels == null || allowedChannels.contains("EMAIL")
+
+        val isTelegramEnabled = rawTelegramEnabled && isTelegramAllowed
+        val isWhatsAppEnabled = rawWhatsAppEnabled && isWhatsAppAllowed
+        val isDiscordEnabled = rawDiscordEnabled && isDiscordAllowed
+        val isWebhookEnabled = rawWebhookEnabled && isWebhookAllowed
+        val isEmailEnabled = rawEmailEnabled && isEmailAllowed
+
         val template = appPreferences.messageTemplate.first()
         val isSensitive = SensitiveFilter.isSensitiveMessage(sms.body)
 
         val batteryInfo = com.smsforwarder.util.NetworkUtil.getBatteryInfo(context)
         val networkType = com.smsforwarder.util.NetworkUtil.getNetworkType(context)
 
-        var telegramStatus = ForwardStatus.DISABLED.name
-        var whatsAppStatus = ForwardStatus.DISABLED.name
-        var discordStatus = ForwardStatus.DISABLED.name
-        var webhookStatus = ForwardStatus.DISABLED.name
-        var emailStatus = ForwardStatus.DISABLED.name
+        var telegramStatus = if (!rawTelegramEnabled) ForwardStatus.DISABLED.name else if (!isTelegramAllowed) "${ForwardStatus.SKIPPED.name} (Filter: Route)" else ForwardStatus.DISABLED.name
+        var whatsAppStatus = if (!rawWhatsAppEnabled) ForwardStatus.DISABLED.name else if (!isWhatsAppAllowed) "${ForwardStatus.SKIPPED.name} (Filter: Route)" else ForwardStatus.DISABLED.name
+        var discordStatus = if (!rawDiscordEnabled) ForwardStatus.DISABLED.name else if (!isDiscordAllowed) "${ForwardStatus.SKIPPED.name} (Filter: Route)" else ForwardStatus.DISABLED.name
+        var webhookStatus = if (!rawWebhookEnabled) ForwardStatus.DISABLED.name else if (!isWebhookAllowed) "${ForwardStatus.SKIPPED.name} (Filter: Route)" else ForwardStatus.DISABLED.name
+        var emailStatus = if (!rawEmailEnabled) ForwardStatus.DISABLED.name else if (!isEmailAllowed) "${ForwardStatus.SKIPPED.name} (Filter: Route)" else ForwardStatus.DISABLED.name
         var combinedError: String? = null
 
         // 1. Process Telegram Forwarding

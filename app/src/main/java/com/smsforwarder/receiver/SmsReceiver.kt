@@ -122,6 +122,41 @@ class SmsReceiver : BroadcastReceiver() {
             return
         }
 
+        // Evaluate Smart Keyword & Sender Filter Rules
+        val filterRules = database.filterRuleDao().getEnabledRulesSync()
+        val ruleResult = com.smsforwarder.util.RuleEvaluator.evaluate(sender, fullBody, filterRules)
+
+        if (ruleResult.isBlocked) {
+            val ruleName = ruleResult.matchedRule?.name ?: "Keyword Filter"
+            Log.i(TAG, "SMS from $sender blocked by rule: $ruleName")
+            database.smsLogDao().insertLog(
+                SmsLogEntity(
+                    sender = sender,
+                    messageBody = fullBody,
+                    simSlotIndex = simSlot,
+                    simDisplayName = simDisplayName,
+                    carrierName = carrierName,
+                    timestamp = timestamp,
+                    telegramStatus = "${ForwardStatus.SKIPPED.name} (Rule: $ruleName)",
+                    whatsappStatus = "${ForwardStatus.SKIPPED.name} (Rule: $ruleName)",
+                    discordStatus = "${ForwardStatus.SKIPPED.name} (Rule: $ruleName)",
+                    webhookStatus = "${ForwardStatus.SKIPPED.name} (Rule: $ruleName)",
+                    emailStatus = "${ForwardStatus.SKIPPED.name} (Rule: $ruleName)",
+                    isSensitive = isSensitive,
+                    errorMessage = ruleResult.reason
+                )
+            )
+            database.diagnosticLogDao().insertLog(
+                com.smsforwarder.data.local.DiagnosticLogEntity(
+                    timestamp = System.currentTimeMillis(),
+                    eventType = "RULE_BLOCKED",
+                    message = "SMS from $sender blocked by rule: $ruleName",
+                    details = "Matched: ${ruleResult.matchedRule?.pattern}"
+                )
+            )
+            return
+        }
+
         // Insert pending log in Room DB
         val logId = database.smsLogDao().insertLog(
             SmsLogEntity(
@@ -138,15 +173,20 @@ class SmsReceiver : BroadcastReceiver() {
         )
 
         // Enqueue WorkManager for resilient forwarding
-        val workData = workDataOf(
-            ForwardWorker.KEY_LOG_ID to logId,
-            ForwardWorker.KEY_SENDER to sender,
-            ForwardWorker.KEY_BODY to fullBody,
-            ForwardWorker.KEY_SIM_SLOT to simSlot,
-            ForwardWorker.KEY_TIMESTAMP to timestamp,
-            ForwardWorker.KEY_CARRIER to carrierName,
-            ForwardWorker.KEY_SUB_ID to (matchedSim?.subscriptionId ?: -1)
-        )
+        val workDataBuilder = androidx.work.Data.Builder()
+            .putLong(ForwardWorker.KEY_LOG_ID, logId)
+            .putString(ForwardWorker.KEY_SENDER, sender)
+            .putString(ForwardWorker.KEY_BODY, fullBody)
+            .putInt(ForwardWorker.KEY_SIM_SLOT, simSlot)
+            .putLong(ForwardWorker.KEY_TIMESTAMP, timestamp)
+            .putString(ForwardWorker.KEY_CARRIER, carrierName)
+            .putInt(ForwardWorker.KEY_SUB_ID, matchedSim?.subscriptionId ?: -1)
+
+        if (ruleResult.allowedChannels != null) {
+            workDataBuilder.putString(ForwardWorker.KEY_ALLOWED_CHANNELS, ruleResult.allowedChannels.joinToString(","))
+        }
+
+        val workData = workDataBuilder.build()
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -160,6 +200,22 @@ class SmsReceiver : BroadcastReceiver() {
 
         WorkManager.getInstance(context).enqueue(forwardWorkRequest)
         Log.d(TAG, "Enqueued ForwardWorker for SMS #$logId")
+
+        // Trigger contextual auto-reply if enabled
+        try {
+            val autoReplyManager = com.smsforwarder.sender.AutoReplyManager(context, appPreferences, database)
+            val smsItem = com.smsforwarder.data.model.SmsMessageItem(
+                sender = sender,
+                body = fullBody,
+                timestamp = timestamp,
+                simSlotIndex = simSlot,
+                subscriptionId = matchedSim?.subscriptionId ?: -1,
+                carrierName = carrierName
+            )
+            autoReplyManager.processIncomingSmsForAutoReply(smsItem)
+        } catch (e: Exception) {
+            Log.e(TAG, "Auto-reply failed to execute", e)
+        }
     }
 
     companion object {

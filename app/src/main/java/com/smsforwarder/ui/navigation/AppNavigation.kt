@@ -63,7 +63,8 @@ fun AppNavigation(
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     appPreferences = appPreferences,
-                    securePreferences = securePreferences
+                    securePreferences = securePreferences,
+                    onRequestPermissions = onRequestPermissions
                 )
             }
             composable(Screen.Logs.route) {

@@ -6,14 +6,21 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [SmsLogEntity::class, DiagnosticLogEntity::class],
-    version = 3,
+    entities = [
+        SmsLogEntity::class,
+        DiagnosticLogEntity::class,
+        FilterRuleEntity::class,
+        AutoReplyHistoryEntity::class
+    ],
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun smsLogDao(): SmsLogDao
     abstract fun diagnosticLogDao(): DiagnosticLogDao
+    abstract fun filterRuleDao(): FilterRuleDao
+    abstract fun autoReplyHistoryDao(): AutoReplyHistoryDao
 
     companion object {
         @Volatile

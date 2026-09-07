@@ -59,6 +59,12 @@ interface SmsLogDao {
     @Query("SELECT COUNT(*) FROM sms_logs")
     fun getTotalCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM sms_logs")
+    suspend fun getTotalCountSync(): Int
+
+    @Query("SELECT * FROM sms_logs ORDER BY timestamp DESC LIMIT :limit OFFSET :offset")
+    suspend fun getRecentLogsSync(limit: Int = 50, offset: Int = 0): List<SmsLogEntity>
+
     @Query("SELECT COUNT(*) FROM sms_logs WHERE telegramStatus = 'SUCCESS' OR whatsappStatus = 'SUCCESS' OR discordStatus = 'SUCCESS' OR webhookStatus = 'SUCCESS' OR emailStatus = 'SUCCESS'")
     fun getSuccessCount(): Flow<Int>
 

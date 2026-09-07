@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     appPreferences: AppPreferences,
     securePreferences: SecurePreferences,
+    onRequestPermissions: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -107,6 +108,7 @@ fun SettingsScreen(
     val discordSender = remember { DiscordSender(securePreferences) }
     val genericWebhookSender = remember { GenericWebhookSender(securePreferences) }
     val emailSender = remember { com.smsforwarder.sender.EmailSender(context, appPreferences, securePreferences) }
+    val database = remember { com.smsforwarder.data.local.AppDatabase.getInstance(context) }
 
     if (showCallMeBotWarning) {
         CallMeBotWarningDialog(
@@ -812,7 +814,32 @@ fun SettingsScreen(
             }
 
             // ==========================================
-            // Section 6: Message Template
+            // Section 7: Smart Keyword & Sender Filtering
+            // ==========================================
+            com.smsforwarder.ui.components.SmartFilterCard(
+                filterRuleDao = database.filterRuleDao(),
+                coroutineScope = coroutineScope
+            )
+
+            // ==========================================
+            // Section 8: SMS Auto-Reply & Response
+            // ==========================================
+            com.smsforwarder.ui.components.AutoReplyCard(
+                appPreferences = appPreferences,
+                coroutineScope = coroutineScope,
+                onRequestSendSmsPermission = onRequestPermissions
+            )
+
+            // ==========================================
+            // Section 9: Send & Receive on PC
+            // ==========================================
+            com.smsforwarder.ui.components.PcConnectCard(
+                appPreferences = appPreferences,
+                coroutineScope = coroutineScope
+            )
+
+            // ==========================================
+            // Section 10: Message Template
             // ==========================================
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

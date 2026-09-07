@@ -102,6 +102,31 @@
     <string name="test_email_success">ایمیل آزمایشی با موفقیت ارسال شد!</string>
     <string name="test_email_failed">ارسال ایمیل آزمایشی ناموفق بود: %1$s</string>
 
+    <!-- Smart Keyword Filtering -->
+    <string name="section_smart_filter">فیلتر هوشمند کلمات کلیدی و فرستنده</string>
+    <string name="filter_desc">پایش و فیلتر هوشمند پیامک‌ها با کلمات کلیدی، مسدودسازی پیام‌های تبلیغاتی یا هدایت به کانال‌های خاص.</string>
+    <string name="add_filter_rule">افزودن قانون جدید</string>
+    <string name="rule_name">نام قانون</string>
+    <string name="rule_pattern">کلمات کلیدی / الگو</string>
+    <string name="rule_pattern_hint">مثال: تخفیف، جایزه، برنده، وام یا عبارات منظم (Regex)</string>
+    <string name="rule_match_field">هدف بررسی</string>
+    <string name="rule_match_type">شرط انطباق</string>
+    <string name="rule_action">عملیات</string>
+    <string name="rule_channels">کانال‌های مقصد</string>
+    <string name="test_sandbox_hint">متن پیامک نمونه را برای آزمایش قوانین اینجا وارد کنید...</string>
+    <string name="preset_spam">افزودن پیش‌فرض ضد هرزنامه (اسپم)</string>
+    <string name="preset_banking">افزودن پیش‌فرض اولویت پیام‌های بانکی و رمز پویا</string>
+    <string name="no_rules_configured">قانونی تعریف نشده است. کلیه پیام‌ها طبق روال عادی هدایت خواهند شد.</string>
+
+    <!-- SMS Auto-Reply -->
+    <string name="section_auto_reply">پاسخ‌دهی خودکار به پیامک (Auto-Reply)</string>
+    <string name="auto_reply_desc">ارسال خودکار پیامک پاسخ به فرستنده با قابلیت جلوگیری از حلقه‌های بی‌پایان (Loop Protection).</string>
+    <string name="auto_reply_enable">فعال‌سازی پاسخ خودکار پیامکی</string>
+    <string name="auto_reply_template">قالب متن پیامک پاسخ</string>
+    <string name="auto_reply_cooldown">فاصله زمانی عدم تکرار پاسخ (Cooldown)</string>
+    <string name="auto_reply_sim">سیم‌کارت ارسال‌کننده پاسخ</string>
+    <string name="auto_reply_permission_warning">برای ارسال پیامک‌های پاسخ خودکار، اعطای دسترسی SEND_SMS الزامی است.</string>
+
     <!-- 24/7 Reliability & Health -->
     <string name="section_reliability">پایداری ۲۴/۷ و سلامت دستگاه</string>
     <string name="heartbeat_title">پالس سلامت دوره‌ای (Heartbeat)</string>
@@ -147,4 +172,17 @@
     <string name="skipped">صرف‌نظر شده</string>
     <string name="disabled">غیرفعال</string>
     <string name="retry">تلاش مجدد</string>
+
+    <!-- Send & Receive on PC (Local Web Server) -->
+    <string name="pc_connect_title">ارسال و دریافت در کامپیوتر</string>
+    <string name="pc_connect_subtitle">دسترسی به پیامک‌ها و ارسال پیام از طریق مرورگر کامپیوتر در شبکه وای‌فای خانگی.</string>
+    <string name="pc_server_enable">فعال‌سازی دسترسی وب (کامپیوتر)</string>
+    <string name="pc_server_running">وب‌سرور در حال اجراست</string>
+    <string name="pc_server_stopped">وب‌سرور خاموش است</string>
+    <string name="pc_server_url">آدرس مرورگر</string>
+    <string name="pc_server_port">پورت</string>
+    <string name="pc_server_pin">پین امنیتی</string>
+    <string name="pc_server_require_auth">نیاز به پین امنیتی برای ورود</string>
+    <string name="pc_server_copied">آدرس مرورگر در حافظه کپی شد!</string>
+    <string name="pc_server_wifi_note">کامپیوتر و گوشی شما باید به یک شبکه وای‌فای متصل باشند.</string>
 </resources>

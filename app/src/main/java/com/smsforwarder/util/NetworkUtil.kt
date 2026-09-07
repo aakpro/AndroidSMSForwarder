@@ -51,4 +51,28 @@ object NetworkUtil {
 
         return BatteryInfo(percentage, isCharging, plugType)
     }
+
+    /**
+     * Resolves the primary local IPv4 address (e.g. Wi-Fi / LAN address) of the device.
+     */
+    fun getLocalIpAddress(): String? {
+        return try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return null
+            for (networkInterface in interfaces.toList()) {
+                if (networkInterface.isLoopback || !networkInterface.isUp) continue
+                val addresses = networkInterface.inetAddresses.toList()
+                for (address in addresses) {
+                    if (!address.isLoopbackAddress && address is java.net.Inet4Address) {
+                        val host = address.hostAddress
+                        if (host != null && !host.startsWith("127.")) {
+                            return host
+                        }
+                    }
+                }
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

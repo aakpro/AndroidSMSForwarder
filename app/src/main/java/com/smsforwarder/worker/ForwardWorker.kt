@@ -41,10 +41,13 @@ class ForwardWorker(
         val securePreferences = SecurePreferences(applicationContext)
         val manager = ForwarderManager(applicationContext, appPreferences, securePreferences)
 
-        Log.d(TAG, "ForwardWorker executing for SMS #$logId (attempt $runAttemptCount)")
+        val allowedChannelsRaw = inputData.getString(KEY_ALLOWED_CHANNELS)
+        val allowedChannels = allowedChannelsRaw?.split(",")?.map { it.trim().uppercase() }?.toSet()
+
+        Log.d(TAG, "ForwardWorker executing for SMS #$logId (channels: ${allowedChannelsRaw ?: "ALL"}, attempt $runAttemptCount)")
 
         return try {
-            val success = manager.forwardSms(sms, logId)
+            val success = manager.forwardSms(sms, logId, allowedChannels)
             if (success) {
                 Result.success()
             } else if (runAttemptCount < 3) {
@@ -69,5 +72,6 @@ class ForwardWorker(
         const val KEY_TIMESTAMP = "arg_timestamp"
         const val KEY_CARRIER = "arg_carrier"
         const val KEY_SUB_ID = "arg_sub_id"
+        const val KEY_ALLOWED_CHANNELS = "arg_allowed_channels"
     }
 }

@@ -18,6 +18,7 @@ import com.smsforwarder.R
 import com.smsforwarder.data.preferences.AppPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class SmsForwarderService : Service() {
@@ -36,6 +37,7 @@ class SmsForwarderService : Service() {
             Log.d(TAG, "Stopping SMS Forwarder Service via intent action")
             serviceScope.launch {
                 AppPreferences(applicationContext).setServiceEnabled(false)
+                com.smsforwarder.server.PcServerManager.getInstance(applicationContext).stopServer()
             }
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -53,6 +55,16 @@ class SmsForwarderService : Service() {
             )
         } else {
             startForeground(NOTIFICATION_ID, notification)
+        }
+
+        serviceScope.launch {
+            val prefs = AppPreferences(applicationContext)
+            if (prefs.isPcServerEnabled.first()) {
+                val port = prefs.pcServerPort.first()
+                val pin = prefs.pcServerPin.first()
+                val auth = prefs.isPcServerRequireAuth.first()
+                com.smsforwarder.server.PcServerManager.getInstance(applicationContext).startServer(port, pin, auth)
+            }
         }
 
         Log.d(TAG, "SMS Forwarder Service started in foreground")

@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Forwarder - PC Web Connect</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151d2f;
+      --card-border: #26334d;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --input-bg: #0e1424;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .brand-title { font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .brand-subtitle { font-size: 0.75rem; color: var(--text-muted); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 9999px;
+      font-size: 0.8rem; font-weight: 500;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.05); }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 16px 24px 0 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--card-bg);
+      border-color: var(--card-border) var(--card-border) transparent var(--card-border);
+      color: #fff;
+    }
+    main {
+      flex: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 24px;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+    .search-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .msg-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .msg-item:hover { border-color: #3b4d75; }
+    .msg-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .msg-sender {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .msg-date { font-size: 0.8rem; color: var(--text-muted); }
+    .msg-body {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: var(--input-bg);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 10px;
+    }
+    .msg-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+    .forward-status { display: flex; gap: 6px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+    .form-control {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); }
+    textarea.form-control { min-height: 110px; resize: vertical; }
+    .char-counter {
+      display: flex;
+      justify-content: flex-end;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert.success { display: block; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: #34d399; }
+    .alert.danger { display: block; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #f87171; }
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 400px;
+      padding: 28px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .pin-input {
+      font-size: 1.5rem;
+      letter-spacing: 6px;
+      text-align: center;
+      font-weight: 700;
+      margin: 16px 0;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .info-item {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .info-title { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+    .info-val { font-size: 1rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
+      <h2 style="font-size: 1.25rem; margin-bottom: 6px;">Security PIN Required</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+        Please enter the security PIN configured in your Android SMS Forwarder app.
+      </p>
+      <input type="password" id="pinInput" class="form-control pin-input" maxlength="8" placeholder="••••" autofocus />
+      <div id="authError" style="color: var(--danger); font-size: 0.8rem; margin-bottom: 12px; display: none;">Invalid PIN. Please try again.</div>
+      <button class="btn" style="width: 100%; justify-content: center;" onclick="verifyPin()">Unlock Web Access</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-left">
+      <div class="brand-icon">💬</div>
+      <div>
+        <div class="brand-title">Android SMS Forwarder</div>
+        <div class="brand-subtitle">PC Web Connect • Local Wi-Fi</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <span class="dot"></span>
+        <span id="connStatus">Connected</span>
+      </div>
+      <div class="status-pill" id="batteryPill">
+        🔋 <span id="batteryVal">--%</span>
+      </div>
+      <button class="btn btn-secondary" onclick="fetchData()" title="Refresh">🔄</button>
+      <button class="btn btn-secondary" onclick="logout()" title="Lock session">🔒</button>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('inbox')">📥 Received SMS (<span id="countBadge">0</span>)</button>
+    <button class="tab-btn" onclick="switchTab('send')">📤 Send New SMS</button>
+    <button class="tab-btn" onclick="switchTab('device')">📊 Device Status</button>
+  </div>
+
+  <main>
+    <!-- TAB 1: INBOX -->
+    <div id="tab-inbox" class="tab-content active">
+      <div class="search-row">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by sender number or message content..." oninput="filterMessages()" />
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; white-space: nowrap;">
+          <input type="checkbox" id="autoRefreshCheck" checked onchange="toggleAutoRefresh(this.checked)" />
+          Auto-sync (3s)
+        </label>
+      </div>
+      <div id="messagesList">
+        <div style="text-align: center; color: var(--text-muted); padding: 40px;">Loading messages...</div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SEND SMS -->
+    <div id="tab-send" class="tab-content">
+      <div class="card" style="max-width: 650px; margin: 0 auto;">
+        <h3 style="margin-bottom: 16px; font-size: 1.15rem;">Send SMS from Phone</h3>
+        <div id="sendAlert" class="alert"></div>
+        <form id="sendForm" onsubmit="handleSendSms(event)">
+          <div class="form-group">
+            <label for="sendRecipient">Recipient Phone Number</label>
+            <input type="text" id="sendRecipient" class="form-control" placeholder="e.g. +1234567890 or 0912..." required />
+          </div>
+          <div class="form-group">
+            <label for="sendSim">SIM Card</label>
+            <select id="sendSim" class="form-control">
+              <option value="-1">Default SIM</option>
+              <option value="0">SIM 1</option>
+              <option value="1">SIM 2</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sendMessage">Message Content</label>
+            <textarea id="sendMessage" class="form-control" placeholder="Type your text message here..." required oninput="updateCharCount(this.value)"></textarea>
+            <div class="char-counter" id="charCounter">0 / 160 characters (1 SMS)</div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('sendForm').reset(); updateCharCount('');">Clear</button>
+            <button type="submit" id="sendBtn" class="btn">Send SMS 🚀</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 3: DEVICE -->
+    <div id="tab-device" class="tab-content">
+      <div class="card">
+        <h3 style="margin-bottom: 16px; font-size: 1.15rem;">Phone & Network Status</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-title">BATTERY LEVEL</div>
+            <div class="info-val" id="devBattery">--%</div>
+          </div>
+          <div class="info-item">
+            <div class="info-title">POWER SOURCE</div>
+            <div class="info-val" id="devPower">--</div>
+          </div>
+          <div class="info-item">
+            <div class="info-title">FORWARDER SERVICE</div>
+            <div class="info-val" id="devService">--</div>
+          </div>
+          <div class="info-item">
+            <div class="info-title">TOTAL SMS LOGGED</div>
+            <div class="info-val" id="devTotalSms">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom: 14px; font-size: 1.15rem;">Active SIM Cards</h3>
+        <div id="simCardsList" class="info-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let allMessages = [];
+    let autoRefreshTimer = null;
+
+    function getAuthPin() {
+      return localStorage.getItem('sms_pc_pin') || '';
+    }
+
+    function getAuthHeaders() {
+      const pin = getAuthPin();
+      return pin ? { 'Authorization': 'Bearer ' + pin, 'X-Auth-PIN': pin } : {};
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      const activeTab = document.getElementById('tab-' + tabId);
+      if (activeTab) activeTab.classList.add('active');
+    }
+
+    async function verifyPin() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) return;
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json();
+        if (res.ok && data.authenticated) {
+          localStorage.setItem('sms_pc_pin', pin);
+          document.getElementById('authModal').classList.remove('active');
+          document.getElementById('authError').style.display = 'none';
+          fetchData();
+        } else {
+          document.getElementById('authError').style.display = 'block';
+        }
+      } catch (e) {
+        document.getElementById('authError').innerText = 'Connection error. Check Wi-Fi.';
+        document.getElementById('authError').style.display = 'block';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('sms_pc_pin');
+      document.getElementById('authModal').classList.add('active');
+      document.getElementById('pinInput').value = '';
+    }
+
+    async function fetchData() {
+      try {
+        const [statusRes, msgsRes] = await Promise.all([
+          fetch('/api/status', { headers: getAuthHeaders() }),
+          fetch('/api/messages?limit=100', { headers: getAuthHeaders() })
+        ]);
+
+        if (statusRes.status === 401 || msgsRes.status === 401) {
+          document.getElementById('authModal').classList.add('active');
+          return;
+        }
+
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          updateStatusUI(status);
+        }
+
+        if (msgsRes.ok) {
+          allMessages = await msgsRes.json();
+          document.getElementById('countBadge').innerText = allMessages.length;
+          renderMessages(allMessages);
+        }
+        document.getElementById('connStatus').innerText = 'Connected';
+      } catch (e) {
+        document.getElementById('connStatus').innerText = 'Offline';
+      }
+    }
+
+    function updateStatusUI(status) {
+      const batText = (status.battery >= 0 ? status.battery + '%' : 'N/A') + (status.isCharging ? ' ⚡' : '');
+      document.getElementById('batteryVal').innerText = batText;
+      document.getElementById('devBattery').innerText = status.battery >= 0 ? status.battery + '%' : 'Unknown';
+      document.getElementById('devPower').innerText = status.isCharging ? 'Charging' : 'Battery';
+      document.getElementById('devService').innerText = status.serviceEnabled ? '🟢 Active' : '⚪ Stopped';
+      document.getElementById('devTotalSms').innerText = status.totalSmsCount || allMessages.length;
+
+      const simContainer = document.getElementById('simCardsList');
+      simContainer.innerHTML = '';
+      if (status.sims && status.sims.length > 0) {
+        status.sims.forEach((sim, idx) => {
+          const item = document.createElement('div');
+          item.className = 'info-item';
+          item.innerHTML = `<div class="info-title">SIM ${idx + 1}</div><div class="info-val">${sim}</div>`;
+          simContainer.appendChild(item);
+        });
+      } else {
+        simContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No SIM details available</div>';
+      }
+    }
+
+    function renderMessages(messages) {
+      const list = document.getElementById('messagesList');
+      if (!messages || messages.length === 0) {
+        list.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;">No messages received yet.</div>';
+        return;
+      }
+
+      list.innerHTML = messages.map(m => {
+        const timeStr = new Date(m.timestamp).toLocaleString();
+        const simLabel = m.simDisplayName ? (m.simDisplayName + ' (' + (m.carrierName || 'SIM') + ')') : ('SIM ' + ((m.simSlotIndex || 0) + 1));
+        return `
+          <div class="msg-item">
+            <div class="msg-header">
+              <div class="msg-sender">
+                <span>${escapeHtml(m.sender)}</span>
+                <span class="badge">${escapeHtml(simLabel)}</span>
+              </div>
+              <span class="msg-date">${timeStr}</span>
+            </div>
+            <div class="msg-body">${escapeHtml(m.messageBody || m.message || '')}</div>
+            <div class="msg-footer">
+              <div class="forward-status">
+                <span class="badge" style="background: rgba(16,185,129,0.15); color: #34d399;">TG: ${m.telegramStatus || 'OK'}</span>
+                <span class="badge" style="background: rgba(59,130,246,0.15); color: #60a5fa;">EM: ${m.emailStatus || 'OFF'}</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="copyText('${escapeJs(m.messageBody || m.message || '')}')">Copy</button>
+                <button class="btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="replyTo('${escapeJs(m.sender)}')">Reply</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterMessages() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      if (!q) {
+        renderMessages(allMessages);
+        return;
+      }
+      const filtered = allMessages.filter(m =>
+        (m.sender && m.sender.toLowerCase().includes(q)) ||
+        (m.messageBody && m.messageBody.toLowerCase().includes(q)) ||
+        (m.message && m.message.toLowerCase().includes(q))
+      );
+      renderMessages(filtered);
+    }
+
+    function replyTo(number) {
+      document.getElementById('sendRecipient').value = number;
+      switchTab('send');
+      document.getElementById('sendMessage').focus();
+    }
+
+    function updateCharCount(text) {
+      const len = text.length;
+      const isGsm = /^[\u0000-\u007F]*$/.test(text);
+      const maxPerSms = isGsm ? 160 : 70;
+      const smsCount = len === 0 ? 1 : Math.ceil(len / maxPerSms);
+      document.getElementById('charCounter').innerText = `${len} / ${maxPerSms} characters (${smsCount} SMS)`;
+    }
+
+    async function handleSendSms(e) {
+      e.preventDefault();
+      const recipient = document.getElementById('sendRecipient').value.trim();
+      const message = document.getElementById('sendMessage').value.trim();
+      const simSlot = parseInt(document.getElementById('sendSim').value, 10);
+      const alertBox = document.getElementById('sendAlert');
+      const sendBtn = document.getElementById('sendBtn');
+
+      if (!recipient || !message) return;
+
+      sendBtn.disabled = true;
+      sendBtn.innerText = 'Sending...';
+      alertBox.className = 'alert';
+      alertBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+          },
+          body: JSON.stringify({ recipient, message, simSlot })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alertBox.className = 'alert success';
+          alertBox.innerText = '✅ ' + (data.message || 'SMS sent successfully!');
+          document.getElementById('sendMessage').value = '';
+          updateCharCount('');
+        } else {
+          alertBox.className = 'alert danger';
+          alertBox.innerText = '❌ ' + (data.error || 'Failed to send SMS.');
+        }
+      } catch (err) {
+        alertBox.className = 'alert danger';
+        alertBox.innerText = '❌ Network error sending SMS: ' + err.message;
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerText = 'Send SMS 🚀';
+      }
+    }
+
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt);
+      alert('Copied to clipboard!');
+    }
+
+    function toggleAutoRefresh(enable) {
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+      if (enable) {
+        autoRefreshTimer = setInterval(fetchData, 3000);
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      return (str || '').replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchData();
+      toggleAutoRefresh(true);
+      document.getElementById('pinInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') verifyPin();
+      });
+    });
+  </script>
+</body>
+</html>

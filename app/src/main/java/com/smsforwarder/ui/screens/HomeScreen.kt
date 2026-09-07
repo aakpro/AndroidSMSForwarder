@@ -282,6 +282,12 @@ fun HomeScreen(
                 }
             )
 
+            // Send & Receive on PC
+            com.smsforwarder.ui.components.PcConnectCard(
+                appPreferences = appPreferences,
+                coroutineScope = coroutineScope
+            )
+
             // Metrics Summary
             Card(
                 modifier = Modifier.fillMaxWidth(),

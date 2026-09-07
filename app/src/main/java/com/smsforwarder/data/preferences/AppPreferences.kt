@@ -59,6 +59,14 @@ class AppPreferences(private val context: Context) {
         val EMAIL_FROM = stringPreferencesKey("email_from")
         val EMAIL_RECIPIENTS = stringPreferencesKey("email_recipients")
         val EMAIL_SUBJECT_TEMPLATE = stringPreferencesKey("email_subject_template")
+        val AUTO_REPLY_ENABLED = booleanPreferencesKey("auto_reply_enabled")
+        val AUTO_REPLY_TEMPLATE = stringPreferencesKey("auto_reply_template")
+        val AUTO_REPLY_COOLDOWN_MINUTES = intPreferencesKey("auto_reply_cooldown_minutes")
+        val AUTO_REPLY_SIM_SLOT = intPreferencesKey("auto_reply_sim_slot")
+        val PC_SERVER_ENABLED = booleanPreferencesKey("pc_server_enabled")
+        val PC_SERVER_PORT = intPreferencesKey("pc_server_port")
+        val PC_SERVER_PIN = stringPreferencesKey("pc_server_pin")
+        val PC_SERVER_REQUIRE_AUTH = booleanPreferencesKey("pc_server_require_auth")
     }
 
     val isServiceEnabled: Flow<Boolean> = context.dataStore.data
@@ -237,7 +245,73 @@ class AppPreferences(private val context: Context) {
         context.dataStore.edit { it[PreferencesKeys.EMAIL_SUBJECT_TEMPLATE] = template }
     }
 
+    val isAutoReplyEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.AUTO_REPLY_ENABLED] ?: false }
+
+    suspend fun setAutoReplyEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.AUTO_REPLY_ENABLED] = enabled }
+    }
+
+    val autoReplyTemplate: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.AUTO_REPLY_TEMPLATE] ?: DEFAULT_AUTO_REPLY_TEMPLATE }
+
+    suspend fun setAutoReplyTemplate(template: String) {
+        context.dataStore.edit { it[PreferencesKeys.AUTO_REPLY_TEMPLATE] = template }
+    }
+
+    val autoReplyCooldownMinutes: Flow<Int> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.AUTO_REPLY_COOLDOWN_MINUTES] ?: 15 }
+
+    suspend fun setAutoReplyCooldownMinutes(minutes: Int) {
+        context.dataStore.edit { it[PreferencesKeys.AUTO_REPLY_COOLDOWN_MINUTES] = minutes }
+    }
+
+    val autoReplySimSlot: Flow<Int> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.AUTO_REPLY_SIM_SLOT] ?: -1 }
+
+    suspend fun setAutoReplySimSlot(slot: Int) {
+        context.dataStore.edit { it[PreferencesKeys.AUTO_REPLY_SIM_SLOT] = slot }
+    }
+
+    val isPcServerEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.PC_SERVER_ENABLED] ?: false }
+
+    suspend fun setPcServerEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.PC_SERVER_ENABLED] = enabled }
+    }
+
+    val pcServerPort: Flow<Int> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.PC_SERVER_PORT] ?: 8080 }
+
+    suspend fun setPcServerPort(port: Int) {
+        context.dataStore.edit { it[PreferencesKeys.PC_SERVER_PORT] = port }
+    }
+
+    val pcServerPin: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.PC_SERVER_PIN] ?: "1234" }
+
+    suspend fun setPcServerPin(pin: String) {
+        context.dataStore.edit { it[PreferencesKeys.PC_SERVER_PIN] = pin }
+    }
+
+    val isPcServerRequireAuth: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.PC_SERVER_REQUIRE_AUTH] ?: true }
+
+    suspend fun setPcServerRequireAuth(requireAuth: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.PC_SERVER_REQUIRE_AUTH] = requireAuth }
+    }
+
     companion object {
+        const val DEFAULT_AUTO_REPLY_TEMPLATE = "Thank you, your message has been received! [Auto-Reply]"
+
         const val DEFAULT_EMAIL_SUBJECT = "[SMS Forwarder] From {sender} ({sim}) - {time}"
 
         const val DEFAULT_TEMPLATE = """📬 <b>New SMS Received</b>
