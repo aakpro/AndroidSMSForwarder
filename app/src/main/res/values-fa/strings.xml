@@ -82,6 +82,26 @@
     <string name="webhook_auth">هدر احراز هویت (اختیاری)</string>
     <string name="webhook_auth_hint">Bearer &lt;token&gt; یا Key: Value</string>
 
+    <!-- Channel: Email (SMTP) -->
+    <string name="channel_email">هدایت به ایمیل (SMTP)</string>
+    <string name="email_enable">فعال‌سازی هدایت به ایمیل</string>
+    <string name="smtp_host">سرور SMTP</string>
+    <string name="smtp_host_hint">مثال: smtp.gmail.com</string>
+    <string name="smtp_port">درگاه (Port)</string>
+    <string name="smtp_encryption">رمزنگاری</string>
+    <string name="smtp_username">نام کاربری / ایمیل</string>
+    <string name="smtp_username_hint">user@gmail.com</string>
+    <string name="smtp_password">رمز عبور / App Password</string>
+    <string name="smtp_password_hint">رمز عبور اختصاصی برنامه (۱۶ کاراکتر)</string>
+    <string name="email_from">نشانی فرستنده (From)</string>
+    <string name="email_from_hint">اختیاری، پیش‌فرض نام کاربری است</string>
+    <string name="email_recipients">گیرنده(های) ایمیل</string>
+    <string name="email_recipients_hint">recipient1@example.com, recipient2@example.com</string>
+    <string name="email_subject_template">قالب عنوان ایمیل</string>
+    <string name="test_email">تست اتصال ایمیل</string>
+    <string name="test_email_success">ایمیل آزمایشی با موفقیت ارسال شد!</string>
+    <string name="test_email_failed">ارسال ایمیل آزمایشی ناموفق بود: %1$s</string>
+
     <!-- 24/7 Reliability & Health -->
     <string name="section_reliability">پایداری ۲۴/۷ و سلامت دستگاه</string>
     <string name="heartbeat_title">پالس سلامت دوره‌ای (Heartbeat)</string>

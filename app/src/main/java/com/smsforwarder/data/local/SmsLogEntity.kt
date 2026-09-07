@@ -17,6 +17,7 @@ data class SmsLogEntity(
     val whatsappStatus: String,     // PENDING, SUCCESS, FAILED, SKIPPED, DISABLED, DRAFT_CREATED
     val discordStatus: String = "DISABLED",
     val webhookStatus: String = "DISABLED",
+    val emailStatus: String = "DISABLED",
     val isSensitive: Boolean = false, // True if OTP / banking keywords matched
     val durationMs: Long = 0L,
     val batteryLevel: Int = -1,

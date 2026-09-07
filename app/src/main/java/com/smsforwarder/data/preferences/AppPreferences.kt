@@ -23,6 +23,17 @@ enum class WhatsAppMode(val key: String, val title: String) {
     }
 }
 
+enum class SmtpEncryption(val key: String, val title: String, val defaultPort: Int) {
+    STARTTLS("STARTTLS", "STARTTLS", 587),
+    SSL_TLS("SSL_TLS", "SSL / TLS", 465),
+    PLAIN("PLAIN", "Plain / Unencrypted", 25);
+
+    companion object {
+        fun fromKey(key: String): SmtpEncryption =
+            entries.find { it.key.equals(key, ignoreCase = true) } ?: STARTTLS
+    }
+}
+
 class AppPreferences(private val context: Context) {
 
     private object PreferencesKeys {
@@ -41,6 +52,13 @@ class AppPreferences(private val context: Context) {
         val HEARTBEAT_INTERVAL_HOURS = intPreferencesKey("heartbeat_interval_hours")
         val LOW_BATTERY_ALERT_ENABLED = booleanPreferencesKey("low_battery_alert_enabled")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val EMAIL_ENABLED = booleanPreferencesKey("email_enabled")
+        val SMTP_HOST = stringPreferencesKey("smtp_host")
+        val SMTP_PORT = intPreferencesKey("smtp_port")
+        val SMTP_ENCRYPTION = stringPreferencesKey("smtp_encryption")
+        val EMAIL_FROM = stringPreferencesKey("email_from")
+        val EMAIL_RECIPIENTS = stringPreferencesKey("email_recipients")
+        val EMAIL_SUBJECT_TEMPLATE = stringPreferencesKey("email_subject_template")
     }
 
     val isServiceEnabled: Flow<Boolean> = context.dataStore.data
@@ -163,7 +181,65 @@ class AppPreferences(private val context: Context) {
         context.dataStore.edit { it[PreferencesKeys.APP_LANGUAGE] = lang }
     }
 
+    val isEmailEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.EMAIL_ENABLED] ?: false }
+
+    suspend fun setEmailEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.EMAIL_ENABLED] = enabled }
+    }
+
+    val smtpHost: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.SMTP_HOST] ?: "smtp.gmail.com" }
+
+    suspend fun setSmtpHost(host: String) {
+        context.dataStore.edit { it[PreferencesKeys.SMTP_HOST] = host }
+    }
+
+    val smtpPort: Flow<Int> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.SMTP_PORT] ?: 587 }
+
+    suspend fun setSmtpPort(port: Int) {
+        context.dataStore.edit { it[PreferencesKeys.SMTP_PORT] = port }
+    }
+
+    val smtpEncryption: Flow<SmtpEncryption> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { SmtpEncryption.fromKey(it[PreferencesKeys.SMTP_ENCRYPTION] ?: SmtpEncryption.STARTTLS.key) }
+
+    suspend fun setSmtpEncryption(encryption: SmtpEncryption) {
+        context.dataStore.edit { it[PreferencesKeys.SMTP_ENCRYPTION] = encryption.key }
+    }
+
+    val emailFrom: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.EMAIL_FROM] ?: "" }
+
+    suspend fun setEmailFrom(from: String) {
+        context.dataStore.edit { it[PreferencesKeys.EMAIL_FROM] = from }
+    }
+
+    val emailRecipients: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.EMAIL_RECIPIENTS] ?: "" }
+
+    suspend fun setEmailRecipients(recipients: String) {
+        context.dataStore.edit { it[PreferencesKeys.EMAIL_RECIPIENTS] = recipients }
+    }
+
+    val emailSubjectTemplate: Flow<String> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[PreferencesKeys.EMAIL_SUBJECT_TEMPLATE] ?: DEFAULT_EMAIL_SUBJECT }
+
+    suspend fun setEmailSubjectTemplate(template: String) {
+        context.dataStore.edit { it[PreferencesKeys.EMAIL_SUBJECT_TEMPLATE] = template }
+    }
+
     companion object {
+        const val DEFAULT_EMAIL_SUBJECT = "[SMS Forwarder] From {sender} ({sim}) - {time}"
+
         const val DEFAULT_TEMPLATE = """📬 <b>New SMS Received</b>
 📱 <b>SIM:</b> {sim} ({carrier})
 👤 <b>From:</b> <code>{sender}</code>

@@ -20,6 +20,7 @@ class ForwarderManager(
     private val whatsAppSender: WhatsAppSender = WhatsAppSender(context, securePreferences),
     private val discordSender: DiscordSender = DiscordSender(securePreferences),
     private val genericWebhookSender: GenericWebhookSender = GenericWebhookSender(securePreferences),
+    private val emailSender: EmailSender = EmailSender(context, appPreferences, securePreferences),
     private val database: AppDatabase = AppDatabase.getInstance(context)
 ) {
 
@@ -29,6 +30,7 @@ class ForwarderManager(
         val isWhatsAppEnabled = appPreferences.isWhatsAppEnabled.first()
         val isDiscordEnabled = appPreferences.isDiscordEnabled.first()
         val isWebhookEnabled = appPreferences.isGenericWebhookEnabled.first()
+        val isEmailEnabled = appPreferences.isEmailEnabled.first()
         val template = appPreferences.messageTemplate.first()
         val isSensitive = SensitiveFilter.isSensitiveMessage(sms.body)
 
@@ -39,6 +41,7 @@ class ForwarderManager(
         var whatsAppStatus = ForwardStatus.DISABLED.name
         var discordStatus = ForwardStatus.DISABLED.name
         var webhookStatus = ForwardStatus.DISABLED.name
+        var emailStatus = ForwardStatus.DISABLED.name
         var combinedError: String? = null
 
         // 1. Process Telegram Forwarding
@@ -148,15 +151,31 @@ class ForwarderManager(
             }
         }
 
+        // 5. Process Email (SMTP) Forwarding
+        if (isEmailEnabled) {
+            val formattedHtml = TemplateFormatter.format(template, sms, escapeHtml = true)
+            val result = emailSender.sendSms(sms, formattedHtml)
+            if (result.isSuccess) {
+                emailStatus = ForwardStatus.SUCCESS.name
+                Log.d(TAG, "SMS #$logId forwarded to Email")
+            } else {
+                emailStatus = ForwardStatus.FAILED.name
+                val err = result.exceptionOrNull()?.message ?: "Email unknown error"
+                combinedError = (combinedError?.let { "$it; " } ?: "") + "Email: $err"
+                Log.e(TAG, "SMS #$logId failed Email forwarding: $err")
+            }
+        }
+
         val durationMs = System.currentTimeMillis() - startTime
 
-        // 5. Update status and diagnostics in Room Database
+        // 6. Update status and diagnostics in Room Database
         database.smsLogDao().updateAllStatuses(
             id = logId,
             telegramStatus = telegramStatus,
             whatsappStatus = whatsAppStatus,
             discordStatus = discordStatus,
             webhookStatus = webhookStatus,
+            emailStatus = emailStatus,
             durationMs = durationMs,
             batteryLevel = batteryInfo.percentage,
             networkType = networkType,
@@ -181,8 +200,9 @@ class ForwarderManager(
         val waOk = whatsAppStatus == ForwardStatus.SUCCESS.name || whatsAppStatus == ForwardStatus.DISABLED.name || whatsAppStatus.startsWith(ForwardStatus.SKIPPED.name)
         val dcOk = discordStatus == ForwardStatus.SUCCESS.name || discordStatus == ForwardStatus.DISABLED.name
         val whOk = webhookStatus == ForwardStatus.SUCCESS.name || webhookStatus == ForwardStatus.DISABLED.name
+        val emOk = emailStatus == ForwardStatus.SUCCESS.name || emailStatus == ForwardStatus.DISABLED.name
 
-        return tgOk && waOk && dcOk && whOk
+        return tgOk && waOk && dcOk && whOk && emOk
     }
 
     companion object {

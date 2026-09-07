@@ -290,7 +290,7 @@ fun SmsLogCard(
     }
 
     val isFailed = log.telegramStatus == "FAILED" || log.whatsappStatus == "FAILED" ||
-            log.discordStatus == "FAILED" || log.webhookStatus == "FAILED"
+            log.discordStatus == "FAILED" || log.webhookStatus == "FAILED" || log.emailStatus == "FAILED"
 
     Card(
         modifier = Modifier
@@ -357,6 +357,9 @@ fun SmsLogCard(
                 }
                 if (log.webhookStatus != "DISABLED") {
                     StatusBadge("WH: ${log.webhookStatus}", log.webhookStatus)
+                }
+                if (log.emailStatus != "DISABLED") {
+                    StatusBadge("EM: ${log.emailStatus}", log.emailStatus)
                 }
             }
 

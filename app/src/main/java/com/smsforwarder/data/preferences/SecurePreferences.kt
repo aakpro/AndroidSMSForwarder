@@ -69,6 +69,14 @@ class SecurePreferences(context: Context) {
         get() = prefs.getString(KEY_GENERIC_WEBHOOK_AUTH, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_GENERIC_WEBHOOK_AUTH, value.trim()).apply()
 
+    var smtpUsername: String
+        get() = prefs.getString(KEY_SMTP_USERNAME, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_SMTP_USERNAME, value.trim()).apply()
+
+    var smtpPassword: String
+        get() = prefs.getString(KEY_SMTP_PASSWORD, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_SMTP_PASSWORD, value.trim()).apply()
+
     fun clearAllSecrets() {
         prefs.edit().clear().apply()
     }
@@ -87,5 +95,7 @@ class SecurePreferences(context: Context) {
         private const val KEY_DISCORD_WEBHOOK_URL = "sec_discord_webhook_url"
         private const val KEY_GENERIC_WEBHOOK_URL = "sec_generic_webhook_url"
         private const val KEY_GENERIC_WEBHOOK_AUTH = "sec_generic_webhook_auth"
+        private const val KEY_SMTP_USERNAME = "sec_smtp_username"
+        private const val KEY_SMTP_PASSWORD = "sec_smtp_password"
     }
 }
